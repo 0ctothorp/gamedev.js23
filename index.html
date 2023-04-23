@@ -1,0 +1,362 @@
+<!-- 
+    Sounds on creative commons 0 license (public domain):
+        oof: https://freesound.org/people/fotoshop/sounds/47356/
+        wrong: https://freesound.org/people/Raclure/sounds/483598/
+        yay: https://freesound.org/people/Higgs01/sounds/428156/
+
+    Digital Dream font by Jakob Fischer (free for personal and commercial use): 
+        https://www.1001fonts.com/digital-dream-font.html
+        www.pizzadude.dk
+ -->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Time flies!</title>
+        <style>
+            @font-face {
+                font-family: "Digital Dream";
+                src: url("assets/digitaldream.ttf");
+            }
+
+            html,
+            body {
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+
+            :root {
+                --default-radius: 4rem;
+                --default-diameter: calc(var(--default-radius) * 2);
+                --clock-margin: 0 5rem;
+                font-size: 14px;
+                box-sizing: border-box;
+            }
+
+            .row {
+                padding: 1rem 0;
+                overflow: hidden;
+                height: var(--default-diameter);
+                /* border-bottom: 1px solid red; */
+            }
+
+            .row:first-child {
+                /* border-top: 1px solid red; */
+            }
+
+            .tracks {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                justify-content: center;
+            }
+
+            .track {
+                height: 100%;
+                display: flex;
+                width: max-content;
+            }
+
+            .track > div {
+                flex: 1 0 var(--default-diameter);
+            }
+
+            .outer-circle {
+                --diameter: calc(var(--radius) * 2);
+                --pointer-width: 0.3rem;
+                --hover-shadow-color: lime;
+                width: var(--diameter);
+                height: var(--diameter);
+                border-radius: 50%;
+                border: 0.3rem solid black;
+                position: relative;
+                /* margin: 0 12rem; */
+                margin: var(--clock-margin);
+            }
+
+            .outer-circle:hover,
+            .outer-circle:hover > * {
+                box-shadow: 0px 0px 5px 2px var(--hover-shadow-color);
+            }
+
+            .outer-circle:hover {
+                cursor: pointer;
+            }
+
+            .long-pointer {
+                height: calc(var(--radius) * 0.9);
+                width: 0.2rem;
+                background: black;
+                position: absolute;
+                bottom: 50%;
+                left: 50%;
+                transform: translateX(-50%) rotateZ(calc(var(--minutes) * 30deg));
+                transform-origin: bottom left;
+            }
+
+            .short-pointer {
+                height: calc(var(--radius) * 0.7);
+                width: 0.35rem;
+                background: black;
+                position: absolute;
+                bottom: 50%;
+                left: 50%;
+                transform: translateX(-50%) rotateZ(calc(var(--hour) * 30deg));
+                transform-origin: bottom left;
+            }
+
+            .top-bar {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                font-family: "Digital Dream";
+            }
+
+            .top-bar > * {
+                padding: 1rem;
+            }
+
+            .time {
+                font-size: 3rem;
+            }
+
+            .points {
+                font-size: 1.5rem;
+            }
+
+            .hp {
+                font-size: 2rem;
+            }
+
+            .empty {
+                width: var(--default-diameter);
+                margin: var(--clock-margin);
+            }
+
+            #looser {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-family: Verdana, Geneva, Tahoma, sans-serif;
+                font-size: 2.5rem;
+                background: white;
+                padding: 2rem;
+                border: 1px solid black;
+                text-transform: uppercase;
+                display: none;
+            }
+
+            #looser button {
+                background: lime;
+                border: 1px solid black;
+                margin: 0 auto;
+                display: block;
+                padding: 0.5rem;
+                font-size: 1.5rem;
+                cursor: pointer;
+                margin-top: 2rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="top-bar">
+            <div class="hp">❤️❤️❤️</div>
+            <div class="time">3:15</div>
+            <div class="points"><span class="value">0</span> points</div>
+        </div>
+        <div class="tracks">
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+        </div>
+
+        <div id="looser">
+            <div>You lost 😥</div>
+            <div id="try-again-wrapper"><button onclick="tryAgain()">Try again</button></div>
+        </div>
+
+        <template id="t-clock">
+            <div class="outer-circle" style="--radius: 4rem; --hour: 8; --minutes: 15" onclick="handleClockClick(this)">
+                <div class="long-pointer"></div>
+                <div class="short-pointer"></div>
+            </div>
+        </template>
+
+        <audio id="audio-yay" src="assets/yay.wav"></audio>
+        <audio id="audio-wrong" src="assets/wrong.mp3"></audio>
+        <audio id="audio-oof" src="assets/oof.wav"></audio>
+
+        <script>
+            function randomInt(to) {
+                return Math.floor(Math.random() * to);
+            }
+
+            const yaySfx = document.querySelector("#audio-yay");
+            const wrongSfx = document.querySelector("#audio-wrong");
+            const oofSfx = document.querySelector("#audio-oof");
+            const hpElement = document.querySelector(".hp");
+            const pointsElement = document.querySelector(".points .value");
+            const looserElement = document.querySelector("#looser");
+            const tracks = document.querySelectorAll(".row .track");
+            const rowsWrapper = document.querySelector(".tracks");
+
+            const MINUTES_EASY = [0, 15, 30, 45];
+            // const MINUTES_HARD = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+            // const MINUTES_IMPOSSIBLE = Array(60)
+            //     .fill()
+            //     .map((_, i) => i);
+            const TRACKS_NUM = 6;
+
+            function instantiateClock(hour, minutes) {
+                const template = document.querySelector("#t-clock");
+                const instance = template.content.cloneNode(true);
+                const clock = instance.children[0];
+                clock.style.setProperty("--hour", hour);
+                clock.style.setProperty("--minutes", minutes);
+                return clock;
+            }
+
+            const TRACK_LENGTH = 20;
+            const matrixRows = Array(TRACKS_NUM)
+                .fill()
+                .map(() => Array(TRACK_LENGTH).fill(0));
+
+            const clockCellsSet = new Set();
+            for (let i = 0; i < TRACK_LENGTH; i++) {
+                const row = Math.floor(Math.random() * TRACKS_NUM);
+                matrixRows[row][i] = 1;
+                clockCellsSet.add(`${row},${i}`);
+            }
+
+            // omg
+            let goalCells = new Set(clockCellsSet);
+            for (let i = goalCells.size; i > 3; i--) {
+                goalCells.delete([...goalCells.values()][randomInt(goalCells.size)]);
+            }
+
+            for (const g of goalCells) {
+                const [row, col] = g.split(",");
+                matrixRows[Number(row)][Number(col)] = 2;
+            }
+
+            const empty = document.createElement("div");
+            empty.className = "empty";
+
+            const GOAL_H = 3;
+            const GOAL_M = 15;
+
+            let hp = 3;
+            function decreaseHP() {
+                oofSfx.play();
+                hp--;
+                hpElement.innerHTML = Array(hp).fill("❤️").join("");
+                if (hp === 0) {
+                    looserElement.style.display = "block";
+                }
+            }
+
+            let points = 0;
+            function increasePoints() {
+                yaySfx.play();
+                points++;
+                pointsElement.innerHTML = points;
+            }
+
+            matrixRows.forEach((row, idx) => {
+                for (const col of row) {
+                    if (col === 1) {
+                        const hour = Math.floor(Math.random() * 12) + 1;
+                        // const hour = randomInt(GOAL_H) + randomInt(12 - (GOAL_H + 1) - GOAL_H + 1) + GOAL_H + 1;
+                        const minutesIdx = Math.floor(Math.random() * MINUTES_EASY.length);
+                        const clock = instantiateClock(hour, MINUTES_EASY[minutesIdx]);
+                        tracks[idx].appendChild(clock);
+                    } else if (col === 2) {
+                        const clock = instantiateClock(3, 15);
+                        // I had some problems with this observer, so I went with the setInterval method :/
+                        // const intObs = new IntersectionObserver(
+                        //     (entries) => {
+                        //         for (const e of entries) {
+                        //             if (e.boundingClientRect.x < 0 && !e.isIntersecting) console.log("NAY");
+                        //         }
+                        //     },
+                        //     {
+                        //         root: tracks[idx].parentElement,
+                        //     }
+                        // );
+                        // intObs.observe(clock);
+                        tracks[idx].appendChild(clock);
+
+                        const intervId = setInterval(() => {
+                            const bounds = clock.getBoundingClientRect();
+                            if (bounds.right < 0) {
+                                clearInterval(intervId);
+                                decreaseHP();
+                            }
+                        }, 16);
+                    } else {
+                        tracks[idx].appendChild(empty.cloneNode());
+                    }
+                }
+            });
+
+            for (const t of tracks) {
+                const initial = `translateX(calc(100vw + ${Math.random()} * 10rem))`;
+                t.style.transform = initial;
+
+                const bounds = t.getClientRects();
+                const anim = [
+                    { transform: initial },
+                    { transform: `translateX(${-Math.ceil(t.getBoundingClientRect().width)}px)` },
+                ];
+
+                const options = {
+                    duration: 25000 + Math.random() * 10000 - 5000,
+                    iterations: 1,
+                    delay: Math.random() * 5000,
+                };
+
+                const animation = t.animate(anim, options);
+                animation.addEventListener("finish", (e) => {
+                    // TODO: reinstantiate clocks in this track and run the animation again with randomized duration and delay
+                    // console.log(e);
+                });
+            }
+
+            function handleClockClick(instance) {
+                const hour = instance.style.getPropertyValue("--hour");
+                const minutes = instance.style.getPropertyValue("--minutes");
+                if (hour == GOAL_H && minutes == GOAL_M) {
+                    increasePoints();
+                    // TODO: add animation on the clicked clock
+                    instance.parentNode.replaceChild(empty.cloneNode(), instance);
+                } else {
+                    wrongSfx.play();
+                    instance.style.setProperty("--hover-shadow-color", "red");
+                    instance.addEventListener(
+                        "mouseleave",
+                        () => {
+                            instance.style.setProperty("--hover-shadow-color", "lime");
+                        },
+                        { once: true }
+                    );
+                }
+            }
+        </script>
+    </body>
+</html>
