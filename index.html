@@ -8,6 +8,10 @@
         https://www.1001fonts.com/digital-dream-font.html
         www.pizzadude.dk
  -->
+<!--
+    TO FIX:
+        - if "try again" is clicked fast, then it looks like old tracks are still there animating 
+ -->
 <!DOCTYPE html>
 <html>
     <head>
@@ -412,6 +416,9 @@
                     };
 
                     const animation = t.animate(anim, options);
+                    // Instead of waiting for track animation finish, I could wait for "goal clocks"
+                    // to pass the left edge of the screen - this would fix the issue with pointless
+                    // waiting for the tracks to pass by even if all the "goal clocks" were already clicked.
                     animation.addEventListener("finish", (e) => {
                         finishedTracks++;
                         if (finishedTracks === TRACKS_NUM && hp > 0) {
@@ -447,9 +454,9 @@
             }
 
             function play(carriedPoints = 0) {
-                const h = randomInt(12) + 1;
-                const m = MINUTES_EASY[randomInt(4)];
-                startRound(20, { hour: h, minutes: m }, carriedPoints);
+                const hour = randomInt(12) + 1;
+                const minutes = MINUTES_EASY[randomInt(4)];
+                startRound(20, { hour, minutes }, carriedPoints);
             }
 
             function tryAgain(carriedPoints = 0) {
