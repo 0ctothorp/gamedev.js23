@@ -179,6 +179,7 @@
             }
 
             #looser #highscore {
+                display: none;
                 text-transform: none;
                 font-size: 2rem;
             }
@@ -260,18 +261,17 @@
         <audio id="audio-wrong" src="assets/wrong.mp3"></audio>
         <audio id="audio-oof" src="assets/oof.wav"></audio>
 
-        <script>
-            function randomInt(to) {
-                return Math.floor(Math.random() * to);
-            }
+        <script type="module">
+            import { randomInt } from "./js/utils.js";
 
             const yaySfx = document.querySelector("#audio-yay");
             const wrongSfx = document.querySelector("#audio-wrong");
             const oofSfx = document.querySelector("#audio-oof");
+
             const hpElement = document.querySelector(".hp");
             const pointsElement = document.querySelector(".points .value");
             const looserElement = document.querySelector("#looser");
-            const tracks = document.querySelectorAll(".row .track");
+            const tracks = document.querySelectorAll(".track");
             const rowsWrapper = document.querySelector(".tracks");
             const mainMenu = document.querySelector(".main-menu-screen");
             const gameScreen = document.querySelector(".game-screen");
@@ -283,6 +283,9 @@
             //     .fill()
             //     .map((_, i) => i);
             const TRACKS_NUM = 6;
+            const HS_SERIALIZATION_KEY = "__time_flies__highscore";
+
+            let round = 1;
 
             function instantiateClock(hour, minutes) {
                 const template = document.querySelector("#t-clock");
@@ -293,9 +296,48 @@
                 return clock;
             }
 
-            let round = 1;
+            function fillHpElement(hp) {
+                hpElement.innerHTML = Array(hp).fill("❤️").join("");
+            }
+
+            function closeYouLost() {
+                looserElement.querySelector("#highscore").style.display = "none";
+                looserElement.style.display = "none";
+            }
+
+            function showYouLost(points) {
+                looserElement.style.display = "block";
+                const prevhs = localStorage.getItem(HS_SERIALIZATION_KEY);
+                if (prevhs === null) {
+                    localStorage.setItem(HS_SERIALIZATION_KEY, points);
+                } else if (prevhs < points) {
+                    looserElement.querySelector("#prev-hs").innerHTML = prevhs.toString();
+                    looserElement.querySelector("#new-hs").innerHTML = points.toString();
+                    looserElement.querySelector("#highscore").style.display = "block";
+                    localStorage.setItem(HS_SERIALIZATION_KEY, points);
+                }
+            }
+
+            function resetTracks() {
+                for (const t of tracks) {
+                    t.innerHTML = "";
+                }
+            }
+
+            function decreaseHP(hp, points) {
+                oofSfx.play();
+                hp--;
+                fillHpElement(hp);
+                if (hp === 0) {
+                    showYouLost(points);
+                    resetTracks();
+                }
+            }
 
             function startRound(trackLength, goal, carriedPoints = 0) {
+                let hp = 3;
+                let points = carriedPoints;
+
                 mainMenu.style.display = "none";
                 gameScreen.style.display = "block";
 
@@ -328,33 +370,7 @@
                 const empty = document.createElement("div");
                 empty.className = "empty";
 
-                const HS_SERIALIZATION_KEY = "__time_flies__highscore";
-
-                let hp = 3;
-                fillHpElement();
-
-                function fillHpElement() {
-                    hpElement.innerHTML = Array(hp).fill("❤️").join("");
-                }
-
-                let points = carriedPoints;
-                function decreaseHP() {
-                    oofSfx.play();
-                    hp--;
-                    fillHpElement();
-                    if (hp === 0) {
-                        looserElement.style.display = "block";
-                        const prevhs = localStorage.getItem(HS_SERIALIZATION_KEY);
-                        if (prevhs === null) localStorage.setItem(HS_SERIALIZATION_KEY, points);
-                        else if (prevhs < points) {
-                            looserElement.querySelector("#prev-hs").innerHTML = prevhs.toString();
-                            looserElement.querySelector("#new-hs").innerHTML = points.toString();
-                            looserElement.querySelector("#highscore").style.display = "block";
-                            localStorage.setItem(HS_SERIALIZATION_KEY, points);
-                        }
-                        resetTracks();
-                    }
-                }
+                fillHpElement(hp);
 
                 function increasePoints() {
                     yaySfx.play();
@@ -447,25 +463,17 @@
                 };
             }
 
-            function resetTracks() {
-                for (const t of tracks) {
-                    t.innerHTML = "";
-                }
-            }
-
-            function play(carriedPoints = 0) {
+            window.play = function play(carriedPoints = 0) {
                 const hour = randomInt(12) + 1;
                 const minutes = MINUTES_EASY[randomInt(4)];
                 startRound(20, { hour, minutes }, carriedPoints);
-            }
+            };
 
-            function tryAgain(carriedPoints = 0) {
+            window.tryAgain = function tryAgain(carriedPoints = 0) {
                 if (carriedPoints === 0) round = 1;
 
-                looserElement.style.display = "none";
+                closeYouLost();
                 resetTracks();
-
-                looserElement.querySelector("#highscore").style.display = "none";
 
                 if (carriedPoints) {
                     const r = document.querySelector(".round-no");
@@ -481,7 +489,7 @@
                 if (!carriedPoints) {
                     pointsElement.innerHTML = "0";
                 }
-            }
+            };
         </script>
     </body>
 </html>
