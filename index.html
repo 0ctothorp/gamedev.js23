@@ -9,18 +9,30 @@
         www.pizzadude.dk
  -->
 <!--
-    TO FIX:
-        - if "try again" is clicked fast, then it looks like old tracks are still there animating 
+    TODO:
+        - progresywne utrudnienia
+            - każda runda odrobinę szybsza (do jakiegoś limitu)
+            - później wprowadzić latanie zegarków w obie strony
+            - później, albo w dodatkowym trudniejszym trybie dodać karę na pomyłki
+            - w trudniejszym trybie życia mogą sie nie regenerować po przejściu rundy (albo np. co drugą rundę)
+            - można też dorzucić bardziej specyficzny czas, np. 15:48 i limit na pomyłki
+            - jak ktoś się pomyli, to zmienić docelową godzinę?
+        - upiększyć grę
+            - jakieś proste i estetyczne animacje i smaczki, które uprzyjemnią granie
+        - dostosowanie do mobile
+            - może na mobile zegarki powinny latać z góry na dół?
  -->
 <!DOCTYPE html>
 <html>
     <head>
         <title>Time flies!</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="preload" href="assets/digitaldream.ttf" as="font" type="font/ttf" crossorigin />
         <style>
             @font-face {
                 font-family: "Digital Dream";
                 src: url("assets/digitaldream.ttf");
+                font-display: block;
             }
 
             html,
@@ -53,7 +65,6 @@
             .tracks {
                 display: flex;
                 flex-direction: column;
-                height: 100vh;
                 justify-content: center;
             }
 
@@ -61,23 +72,22 @@
                 height: 100%;
                 display: flex;
                 width: max-content;
-            }
 
-            .track > div {
-                flex: 1 0 var(--default-diameter);
+                /*debug*/
+                /* outline: 1px solid black; */
             }
 
             .outer-circle {
                 --diameter: calc(var(--radius) * 2);
                 --pointer-width: 0.3rem;
                 --hover-shadow-color: lime;
-                width: var(--diameter);
-                height: var(--diameter);
+                /* width: var(--diameter);
+                height: var(--diameter); */
                 border-radius: 50%;
                 border: 0.3rem solid black;
                 position: relative;
-                /* margin: 0 12rem; */
                 margin: var(--clock-margin);
+                aspect-ratio: 1;
             }
 
             .outer-circle:hover,
@@ -140,7 +150,6 @@
             }
 
             #looser {
-                display: none;
                 position: fixed;
                 top: 50%;
                 left: 50%;
@@ -168,7 +177,10 @@
             }
 
             .game-screen {
-                display: none;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+                height: 100vh;
             }
 
             .main-menu-screen {
@@ -179,7 +191,6 @@
             }
 
             #looser #highscore {
-                display: none;
                 text-transform: none;
                 font-size: 2rem;
             }
@@ -217,35 +228,16 @@
                 <div class="time">3:15</div>
                 <div class="points"><span class="value">0</span> points</div>
             </div>
-            <div class="tracks">
-                <div class="row">
-                    <div class="track"></div>
-                </div>
-                <div class="row">
-                    <div class="track"></div>
-                </div>
-                <div class="row">
-                    <div class="track"></div>
-                </div>
-                <div class="row">
-                    <div class="track"></div>
-                </div>
-                <div class="row">
-                    <div class="track"></div>
-                </div>
-                <div class="row">
-                    <div class="track"></div>
-                </div>
-            </div>
+            <div class="tracks"></div>
             <span class="round-no">Round 1</span>
         </div>
 
-        <div id="looser">
+        <div id="looser" style="display: none">
             <div>You lost 😥</div>
-            <div id="highscore">
+            <div id="highscore" style="display: none">
                 <div>but...</div>
                 <div>🎉 Congrats! You have beaten your previous highscore of <span id="prev-hs">0</span></div>
-                <div>Your new highscore is <span id="new-hs">0</span> 🤩</div>
+                <div>Your new highscore is <strong id="new-hs">0</strong> 🤩</div>
             </div>
             <div id="try-again-wrapper"><button class="main-button" onclick="tryAgain()">Try again</button></div>
         </div>
@@ -257,12 +249,33 @@
             </div>
         </template>
 
+        <template id="t-tracks">
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+            <div class="row">
+                <div class="track"></div>
+            </div>
+        </template>
+
         <audio id="audio-yay" src="assets/yay.wav"></audio>
         <audio id="audio-wrong" src="assets/wrong.mp3"></audio>
         <audio id="audio-oof" src="assets/oof.wav"></audio>
 
         <script type="module">
-            import { randomInt } from "./js/utils.js";
+            import { randomInt, instantiateTemplate } from "./js/utils.js";
 
             const yaySfx = document.querySelector("#audio-yay");
             const wrongSfx = document.querySelector("#audio-wrong");
@@ -271,7 +284,6 @@
             const hpElement = document.querySelector(".hp");
             const pointsElement = document.querySelector(".points .value");
             const looserElement = document.querySelector("#looser");
-            const tracks = document.querySelectorAll(".track");
             const rowsWrapper = document.querySelector(".tracks");
             const mainMenu = document.querySelector(".main-menu-screen");
             const gameScreen = document.querySelector(".game-screen");
@@ -285,11 +297,14 @@
             const TRACKS_NUM = 6;
             const HS_SERIALIZATION_KEY = "__time_flies__highscore";
 
+            // let LOSE_LISTENERS = [];
+
             let round = 1;
+            let goalClocksCount = 0;
+            let goneProperClocksCount = 0;
 
             function instantiateClock(hour, minutes) {
-                const template = document.querySelector("#t-clock");
-                const instance = template.content.cloneNode(true);
+                const instance = instantiateTemplate("#t-clock");
                 const clock = instance.children[0];
                 clock.style.setProperty("--hour", hour);
                 clock.style.setProperty("--minutes", minutes);
@@ -306,40 +321,67 @@
             }
 
             function showYouLost(points) {
-                looserElement.style.display = "block";
+                looserElement.style.display = null;
                 const prevhs = localStorage.getItem(HS_SERIALIZATION_KEY);
                 if (prevhs === null) {
                     localStorage.setItem(HS_SERIALIZATION_KEY, points);
                 } else if (prevhs < points) {
                     looserElement.querySelector("#prev-hs").innerHTML = prevhs.toString();
                     looserElement.querySelector("#new-hs").innerHTML = points.toString();
-                    looserElement.querySelector("#highscore").style.display = "block";
+                    looserElement.querySelector("#highscore").style.display = null;
                     localStorage.setItem(HS_SERIALIZATION_KEY, points);
                 }
             }
 
-            function resetTracks() {
-                for (const t of tracks) {
-                    t.innerHTML = "";
-                }
+            function resetTracks(tracks) {
+                tracks.forEach((t) => (t.innerHTML = ""));
             }
 
-            function decreaseHP(hp, points) {
+            function reinstantiateTracks() {
+                rowsWrapper.innerHTML = "";
+                const newTracksInstance = instantiateTemplate("#t-tracks");
+                rowsWrapper.append(...newTracksInstance.children);
+            }
+
+            function decreaseHP(hp, points, tracks) {
                 oofSfx.play();
                 hp--;
                 fillHpElement(hp);
                 if (hp === 0) {
                     showYouLost(points);
-                    resetTracks();
+                    resetTracks(tracks);
+                    // LOSE_LISTENERS.forEach((x) => x());
+                    // LOSE_LISTENERS = [];
                 }
+                return hp;
+            }
+
+            function increasePoints(points) {
+                yaySfx.play();
+                points++;
+                goneProperClocksCount++;
+                pointsElement.innerHTML = points;
+
+                console.log({ goneProperClocksCount, goalClocksCount });
+
+                if (goneProperClocksCount == goalClocksCount) {
+                    setTimeout(() => {
+                        round = nextRound(points, round);
+                    });
+                }
+
+                return points;
             }
 
             function startRound(trackLength, goal, carriedPoints = 0) {
+                goalClocksCount = 0;
+                goneProperClocksCount = 0;
+
                 let hp = 3;
                 let points = carriedPoints;
 
                 mainMenu.style.display = "none";
-                gameScreen.style.display = "block";
+                gameScreen.style.display = null;
 
                 const { hour: ghour, minutes: gminutes } = goal;
 
@@ -372,31 +414,43 @@
 
                 fillHpElement(hp);
 
-                function increasePoints() {
-                    yaySfx.play();
-                    points++;
-                    pointsElement.innerHTML = points;
-                }
+                reinstantiateTracks();
+                const tracks = document.querySelectorAll(".track");
 
+                goalClocksCount = goalCells.size;
                 matrixRows.forEach((row, idx) => {
                     for (const col of row) {
                         if (col === 1) {
                             const hour = Math.floor(Math.random() * 12) + 1;
                             const minutesIdx = Math.floor(Math.random() * MINUTES_EASY.length);
-                            const clock = instantiateClock(hour, MINUTES_EASY[minutesIdx]);
+                            const minutes = MINUTES_EASY[minutesIdx];
+                            const clock = instantiateClock(hour, minutes);
                             tracks[idx].appendChild(clock);
+
+                            // There's also possibility that a "goal clock" will be generated here.
+                            if (hour === ghour && minutes === gminutes) {
+                                const intervId = setInterval(() => {
+                                    const bounds = clock.getBoundingClientRect();
+                                    if (bounds.right < 0) {
+                                        clearInterval(intervId);
+                                        hp = decreaseHP(hp, points, tracks);
+                                        goneProperClocksCount++;
+                                        if (goneProperClocksCount == goalClocksCount && hp > 0) {
+                                            round = nextRound(points, round);
+                                        }
+                                    }
+                                }, 16);
+
+                                goalClocksCount++;
+                            }
                         } else if (col === 2) {
                             const clock = instantiateClock(ghour, gminutes);
                             // I had some problems with this observer, so I went with the setInterval method :/
                             // const intObs = new IntersectionObserver(
                             //     (entries) => {
-                            //         for (const e of entries) {
+                            //         for (const e of entries)
                             //             if (e.boundingClientRect.x < 0 && !e.isIntersecting) console.log("NAY");
-                            //         }
-                            //     },
-                            //     {
-                            //         root: tracks[idx].parentElement,
-                            //     }
+                            //     }, { root: tracks[idx].parentElement }
                             // );
                             // intObs.observe(clock);
                             tracks[idx].appendChild(clock);
@@ -405,7 +459,11 @@
                                 const bounds = clock.getBoundingClientRect();
                                 if (bounds.right < 0) {
                                     clearInterval(intervId);
-                                    decreaseHP();
+                                    hp = decreaseHP(hp, points, tracks);
+                                    goneProperClocksCount++;
+                                    if (goneProperClocksCount == goalClocksCount && hp > 0) {
+                                        round = nextRound(points, round);
+                                    }
                                 }
                             }, 16);
                         } else {
@@ -416,7 +474,7 @@
 
                 let finishedTracks = 0;
                 for (const t of tracks) {
-                    const initial = `translateX(calc(100vw + ${Math.random()} * 10rem))`;
+                    const initial = `translateX(calc(100vw + ${randomInt(5)}rem))`;
                     t.style.transform = initial;
 
                     const bounds = t.getClientRects();
@@ -426,28 +484,34 @@
                     ];
 
                     const options = {
-                        duration: 30000 + Math.random() * 10000 - 5000,
+                        // TODO: Make this faster with every round. Up to a certain limit. Then introduce tracks that go the other way.
+                        duration: 32500 + randomInt(5000) - 2500, // 32.5 +- 2.5s
                         iterations: 1,
-                        delay: Math.random() * 5000,
+                        delay: randomInt(5000),
                     };
 
                     const animation = t.animate(anim, options);
+
+                    // LOSE_LISTENERS.push(() => {
+                    //     animation.cancel();
+                    // });
+
                     // Instead of waiting for track animation finish, I could wait for "goal clocks"
                     // to pass the left edge of the screen - this would fix the issue with pointless
                     // waiting for the tracks to pass by even if all the "goal clocks" were already clicked.
-                    animation.addEventListener("finish", (e) => {
-                        finishedTracks++;
-                        if (finishedTracks === TRACKS_NUM && hp > 0) {
-                            tryAgain(points);
-                        }
-                    });
+                    // animation.addEventListener("finish", (e) => {
+                    //     finishedTracks++;
+                    //     if (finishedTracks === TRACKS_NUM && hp > 0) {
+                    //         tryAgain(points);
+                    //     }
+                    // });
                 }
 
                 window.handleClockClick = (instance) => {
                     const hour = instance.style.getPropertyValue("--hour");
                     const minutes = instance.style.getPropertyValue("--minutes");
                     if (hour == ghour && minutes == gminutes) {
-                        increasePoints();
+                        points = increasePoints(points);
                         instance.parentNode.replaceChild(empty.cloneNode(), instance);
                     } else {
                         wrongSfx.play();
@@ -469,27 +533,28 @@
                 startRound(20, { hour, minutes }, carriedPoints);
             };
 
-            window.tryAgain = function tryAgain(carriedPoints = 0) {
-                if (carriedPoints === 0) round = 1;
+            window.tryAgain = function tryAgain() {
+                round = 1;
 
                 closeYouLost();
-                resetTracks();
 
-                if (carriedPoints) {
-                    const r = document.querySelector(".round-no");
-                    round += 1;
-                    r.innerHTML = `Round ${round}`;
-                    r.classList.add("op1");
-                    setTimeout(() => {
-                        r.classList.remove("op1");
-                    }, 1000);
-                }
+                pointsElement.innerHTML = "0";
+                play();
+            };
+
+            function nextRound(carriedPoints, round) {
+                const r = document.querySelector(".round-no");
+                round += 1;
+                r.innerHTML = `Round ${round}`;
+                r.classList.add("op1");
+                setTimeout(() => {
+                    r.classList.remove("op1");
+                }, 1000);
 
                 play(carriedPoints);
-                if (!carriedPoints) {
-                    pointsElement.innerHTML = "0";
-                }
-            };
+
+                return round;
+            }
         </script>
     </body>
 </html>
