@@ -17,10 +17,20 @@
             - w trudniejszym trybie życia mogą sie nie regenerować po przejściu rundy (albo np. co drugą rundę)
             - można też dorzucić bardziej specyficzny czas, np. 15:48 i limit na pomyłki
             - jak ktoś się pomyli, to zmienić docelową godzinę?
+        - kilka trybów trudności?
+            - normal
+                - tak jak jest teraz
+            - hard
+                - pomyłki są karane utratą serca
+            - impossible
+                - hard + przy starcie rundy nie resetują się serca
         - upiększyć grę
             - jakieś proste i estetyczne animacje i smaczki, które uprzyjemnią granie
         - dostosowanie do mobile
             - może na mobile zegarki powinny latać z góry na dół?
+
+    FIXME:
+        - jak kliknie się szybko na jeden zegarek, a potem na drugi, to ten drugi nie odtwarza dźwięku, bo pierwszy jeszcze się nie skończył
  -->
 <!DOCTYPE html>
 <html>
@@ -270,14 +280,14 @@
             </div>
         </template>
 
-        <audio id="audio-yay" src="assets/yay.wav"></audio>
+        <!-- <audio id="audio-yay" src="assets/yay.wav"></audio> -->
         <audio id="audio-wrong" src="assets/wrong.mp3"></audio>
         <audio id="audio-oof" src="assets/oof.wav"></audio>
 
         <script type="module">
             import { randomInt, instantiateTemplate } from "./js/utils.js";
 
-            const yaySfx = document.querySelector("#audio-yay");
+            const yaySfx = new Audio("assets/yay.wav");
             const wrongSfx = document.querySelector("#audio-wrong");
             const oofSfx = document.querySelector("#audio-oof");
 
@@ -297,7 +307,14 @@
             const TRACKS_NUM = 6;
             const HS_SERIALIZATION_KEY = "__time_flies__highscore";
 
-            // let LOSE_LISTENERS = [];
+            const BASE_TRACK_ANIMATION_TIME = 33000;
+            const STOP_SPEEDUP_AT_ROUND = 15;
+            const SPEEDUP_STEP = 300;
+
+            function getTrackAnimationDuration(round) {
+                const base = BASE_TRACK_ANIMATION_TIME - SPEEDUP_STEP * Math.min(round, STOP_SPEEDUP_AT_ROUND);
+                return base + randomInt(5000) - 2500; // +/- 2500
+            }
 
             let round = 1;
             let goalClocksCount = 0;
@@ -350,19 +367,16 @@
                 if (hp === 0) {
                     showYouLost(points);
                     resetTracks(tracks);
-                    // LOSE_LISTENERS.forEach((x) => x());
-                    // LOSE_LISTENERS = [];
                 }
                 return hp;
             }
 
             function increasePoints(points) {
+                yaySfx.currentTime = 0;
                 yaySfx.play();
                 points++;
                 goneProperClocksCount++;
                 pointsElement.innerHTML = points;
-
-                console.log({ goneProperClocksCount, goalClocksCount });
 
                 if (goneProperClocksCount == goalClocksCount) {
                     setTimeout(() => {
@@ -472,8 +486,11 @@
                     }
                 });
 
+                console.group("tracks durations");
                 let finishedTracks = 0;
-                for (const t of tracks) {
+                for (let i = 0; i < tracks.length; i++) {
+                    const t = tracks[i];
+
                     const initial = `translateX(calc(100vw + ${randomInt(5)}rem))`;
                     t.style.transform = initial;
 
@@ -483,29 +500,20 @@
                         { transform: `translateX(${-Math.ceil(t.getBoundingClientRect().width)}px)` },
                     ];
 
+                    const duration = getTrackAnimationDuration(round);
+
+                    // debug
+                    // console.log(`track ${i} duration: ${duration}`);
+
                     const options = {
-                        // TODO: Make this faster with every round. Up to a certain limit. Then introduce tracks that go the other way.
-                        duration: 32500 + randomInt(5000) - 2500, // 32.5 +- 2.5s
+                        duration,
                         iterations: 1,
                         delay: randomInt(5000),
                     };
 
                     const animation = t.animate(anim, options);
-
-                    // LOSE_LISTENERS.push(() => {
-                    //     animation.cancel();
-                    // });
-
-                    // Instead of waiting for track animation finish, I could wait for "goal clocks"
-                    // to pass the left edge of the screen - this would fix the issue with pointless
-                    // waiting for the tracks to pass by even if all the "goal clocks" were already clicked.
-                    // animation.addEventListener("finish", (e) => {
-                    //     finishedTracks++;
-                    //     if (finishedTracks === TRACKS_NUM && hp > 0) {
-                    //         tryAgain(points);
-                    //     }
-                    // });
                 }
+                console.groupEnd("track durations");
 
                 window.handleClockClick = (instance) => {
                     const hour = instance.style.getPropertyValue("--hour");
