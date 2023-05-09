@@ -12,6 +12,7 @@
     TODO:
         - progresywne utrudnienia
             - każda runda odrobinę szybsza (do jakiegoś limitu)
+            - zwiększanie ilości zegarków
             - później wprowadzić latanie zegarków w obie strony
             - później, albo w dodatkowym trudniejszym trybie dodać karę na pomyłki
             - w trudniejszym trybie życia mogą sie nie regenerować po przejściu rundy (albo np. co drugą rundę)
@@ -28,9 +29,6 @@
             - jakieś proste i estetyczne animacje i smaczki, które uprzyjemnią granie
         - dostosowanie do mobile
             - może na mobile zegarki powinny latać z góry na dół?
-
-    FIXME:
-        - jak kliknie się szybko na jeden zegarek, a potem na drugi, to ten drugi nie odtwarza dźwięku, bo pierwszy jeszcze się nie skończył
  -->
 <!DOCTYPE html>
 <html>
@@ -316,6 +314,18 @@
                 return base + randomInt(5000) - 2500; // +/- 2500
             }
 
+            const BASE_MAX_CLOCKS_PER_COLUMN = 1;
+            // const MAX_CLOCKS_PER_COLUMN_STEP = 0.2;
+            const MAX_CLOCKS_PER_COLUMN_STEP = 0.6;
+            const AT_MOST_CLOCKS_PER_COLUMN = 3;
+
+            function getClocksPerColumn(round) {
+                return Math.min(
+                    AT_MOST_CLOCKS_PER_COLUMN,
+                    Math.floor(BASE_MAX_CLOCKS_PER_COLUMN + MAX_CLOCKS_PER_COLUMN_STEP * round)
+                );
+            }
+
             let round = 1;
             let goalClocksCount = 0;
             let goneProperClocksCount = 0;
@@ -405,12 +415,25 @@
                     .fill()
                     .map(() => Array(trackLength).fill(0));
 
+                const clocksPerColumn = getClocksPerColumn(round);
+                // debug
+                console.group("clocks per column");
+                console.log("clocksPerColumn", clocksPerColumn);
+                // Losuję dla każdej kolumny, w którym wierszu ma się znaleźć zegarek.
+                // Czyli dla każdej kolumny co najwyżej jeden wiersz będzie miał zegarek
                 const clockCellsSet = new Set();
                 for (let i = 0; i < trackLength; i++) {
-                    const row = Math.floor(Math.random() * TRACKS_NUM);
-                    matrixRows[row][i] = 1;
-                    clockCellsSet.add(`${row},${i}`);
+                    const count = randomInt(clocksPerColumn) + 1; // [0..1] + 1 => [1..2]
+                    // debug
+                    console.log("count", count);
+                    for (let j = 0; j < count; j++) {
+                        // W teorii możemy count razy wylosować ten sam row.
+                        const row = randomInt(TRACKS_NUM);
+                        matrixRows[row][i] = 1;
+                        clockCellsSet.add(`${row},${i}`);
+                    }
                 }
+                console.groupEnd("clocks per column");
 
                 // omg
                 let goalCells = new Set(clockCellsSet);
