@@ -278,24 +278,20 @@
             </div>
         </template>
 
-        <!-- <audio id="audio-yay" src="assets/yay.wav"></audio> -->
-        <audio id="audio-wrong" src="assets/wrong.mp3"></audio>
-        <audio id="audio-oof" src="assets/oof.wav"></audio>
-
         <script type="module">
-            import { randomInt, instantiateTemplate } from "./js/utils.js";
+            import { randomInt, instantiateTemplate, qs, playAudio } from "./js/utils.js";
 
             const yaySfx = new Audio("assets/yay.wav");
-            const wrongSfx = document.querySelector("#audio-wrong");
-            const oofSfx = document.querySelector("#audio-oof");
+            const wrongSfx = new Audio("assets/wrong.mp3");
+            const oofSfx = new Audio("assets/oof.wav");
 
-            const hpElement = document.querySelector(".hp");
-            const pointsElement = document.querySelector(".points .value");
-            const looserElement = document.querySelector("#looser");
-            const rowsWrapper = document.querySelector(".tracks");
-            const mainMenu = document.querySelector(".main-menu-screen");
-            const gameScreen = document.querySelector(".game-screen");
-            const time = document.querySelector(".time");
+            const hpElement = qs(".hp");
+            const pointsElement = qs(".points .value");
+            const looserElement = qs("#looser");
+            const rowsWrapper = qs(".tracks");
+            const mainMenu = qs(".main-menu-screen");
+            const gameScreen = qs(".game-screen");
+            const time = qs(".time");
 
             const MINUTES_EASY = [0, 15, 30, 45];
             // const MINUTES_HARD = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
@@ -315,8 +311,7 @@
             }
 
             const BASE_MAX_CLOCKS_PER_COLUMN = 1;
-            // const MAX_CLOCKS_PER_COLUMN_STEP = 0.2;
-            const MAX_CLOCKS_PER_COLUMN_STEP = 0.6;
+            const MAX_CLOCKS_PER_COLUMN_STEP = 0.2;
             const AT_MOST_CLOCKS_PER_COLUMN = 3;
 
             function getClocksPerColumn(round) {
@@ -371,7 +366,7 @@
             }
 
             function decreaseHP(hp, points, tracks) {
-                oofSfx.play();
+                playAudio(oofSfx);
                 hp--;
                 fillHpElement(hp);
                 if (hp === 0) {
@@ -382,8 +377,7 @@
             }
 
             function increasePoints(points) {
-                yaySfx.currentTime = 0;
-                yaySfx.play();
+                playAudio(yaySfx);
                 points++;
                 goneProperClocksCount++;
                 pointsElement.innerHTML = points;
@@ -454,6 +448,17 @@
                 reinstantiateTracks();
                 const tracks = document.querySelectorAll(".track");
 
+                function onClockGoneOffScreen(intervId) {
+                    clearInterval(intervId);
+                    hp = decreaseHP(hp, points, tracks);
+                    goneProperClocksCount++;
+                    if (goneProperClocksCount == goalClocksCount && hp > 0) {
+                        round = nextRound(points, round);
+                    }
+                }
+
+                const clocksToCheckOffscreen = new Set();
+
                 goalClocksCount = goalCells.size;
                 matrixRows.forEach((row, idx) => {
                     for (const col of row) {
@@ -466,15 +471,12 @@
 
                             // There's also possibility that a "goal clock" will be generated here.
                             if (hour === ghour && minutes === gminutes) {
+                                clocksToCheckOffscreen.add(clock);
+
                                 const intervId = setInterval(() => {
                                     const bounds = clock.getBoundingClientRect();
                                     if (bounds.right < 0) {
-                                        clearInterval(intervId);
-                                        hp = decreaseHP(hp, points, tracks);
-                                        goneProperClocksCount++;
-                                        if (goneProperClocksCount == goalClocksCount && hp > 0) {
-                                            round = nextRound(points, round);
-                                        }
+                                        onClockGoneOffScreen(intervId);
                                     }
                                 }, 16);
 
@@ -482,25 +484,14 @@
                             }
                         } else if (col === 2) {
                             const clock = instantiateClock(ghour, gminutes);
-                            // I had some problems with this observer, so I went with the setInterval method :/
-                            // const intObs = new IntersectionObserver(
-                            //     (entries) => {
-                            //         for (const e of entries)
-                            //             if (e.boundingClientRect.x < 0 && !e.isIntersecting) console.log("NAY");
-                            //     }, { root: tracks[idx].parentElement }
-                            // );
-                            // intObs.observe(clock);
                             tracks[idx].appendChild(clock);
+                            clocksToCheckOffscreen.add(clock);
 
+                            // I had problems with observer, so I went with the setInterval method :/
                             const intervId = setInterval(() => {
                                 const bounds = clock.getBoundingClientRect();
                                 if (bounds.right < 0) {
-                                    clearInterval(intervId);
-                                    hp = decreaseHP(hp, points, tracks);
-                                    goneProperClocksCount++;
-                                    if (goneProperClocksCount == goalClocksCount && hp > 0) {
-                                        round = nextRound(points, round);
-                                    }
+                                    onClockGoneOffScreen(intervId);
                                 }
                             }, 16);
                         } else {
@@ -509,34 +500,60 @@
                     }
                 });
 
-                console.group("tracks durations");
-                let finishedTracks = 0;
-                for (let i = 0; i < tracks.length; i++) {
-                    const t = tracks[i];
+                function setupTracks(roundNumber) {
+                    const reverseTracks = (() => {
+                        if (roundNumber >= 4) {
+                            const set = new Set([randomInt(6), randomInt(6), randomInt(6)]);
+                            return [...set];
+                        }
+                        if (roundNumber >= 3) {
+                            const set = new Set([randomInt(6), randomInt(6)]);
+                            return [...set];
+                        }
+                        if (roundNumber >= 2) {
+                            return [randomInt(6)];
+                        }
+                        return [];
+                    })(round);
 
-                    const initial = `translateX(calc(100vw + ${randomInt(5)}rem))`;
-                    t.style.transform = initial;
+                    // console.group("tracks durations");
+                    for (let i = 0; i < tracks.length; i++) {
+                        const t = tracks[i];
 
-                    const bounds = t.getClientRects();
-                    const anim = [
-                        { transform: initial },
-                        { transform: `translateX(${-Math.ceil(t.getBoundingClientRect().width)}px)` },
-                    ];
+                        let initialTranslate, goalTranslate;
 
-                    const duration = getTrackAnimationDuration(round);
+                        if (reverseTracks.includes(i)) {
+                            console.log(`track ${i} is reverse`);
+                            initialTranslate = `translateX(calc(-${randomInt(5)}rem - ${Math.ceil(
+                                t.getBoundingClientRect().width
+                            )}px))`;
+                            goalTranslate = `translateX(calc(100vw))`;
+                        } else {
+                            initialTranslate = `translateX(calc(100vw + ${randomInt(5)}rem))`;
+                            goalTranslate = `translateX(${-Math.ceil(t.getBoundingClientRect().width)}px)`;
+                        }
 
-                    // debug
-                    // console.log(`track ${i} duration: ${duration}`);
+                        t.style.transform = initialTranslate;
 
-                    const options = {
-                        duration,
-                        iterations: 1,
-                        delay: randomInt(5000),
-                    };
+                        const bounds = t.getClientRects();
+                        const anim = [{ transform: initialTranslate }, { transform: goalTranslate }];
+                        const duration = getTrackAnimationDuration(round);
 
-                    const animation = t.animate(anim, options);
+                        // debug
+                        // console.log(`track ${i} duration: ${duration}`);
+
+                        const options = {
+                            duration,
+                            iterations: 1,
+                            delay: randomInt(5000),
+                        };
+
+                        const animation = t.animate(anim, options);
+                    }
+                    // console.groupEnd("track durations");
                 }
-                console.groupEnd("track durations");
+
+                setupTracks(round);
 
                 window.handleClockClick = (instance) => {
                     const hour = instance.style.getPropertyValue("--hour");
@@ -545,7 +562,7 @@
                         points = increasePoints(points);
                         instance.parentNode.replaceChild(empty.cloneNode(), instance);
                     } else {
-                        wrongSfx.play();
+                        playAudio(wrongSfx);
                         instance.style.setProperty("--hover-shadow-color", "red");
                         instance.addEventListener(
                             "mouseleave",
