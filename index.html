@@ -11,20 +11,19 @@
 <!--
     TODO:
         - progresywne utrudnienia
-            - każda runda odrobinę szybsza (do jakiegoś limitu)
             - zwiększanie ilości zegarków
-            - później wprowadzić latanie zegarków w obie strony
-            - później, albo w dodatkowym trudniejszym trybie dodać karę na pomyłki
-            - w trudniejszym trybie życia mogą sie nie regenerować po przejściu rundy (albo np. co drugą rundę)
-            - można też dorzucić bardziej specyficzny czas, np. 15:48 i limit na pomyłki
-            - jak ktoś się pomyli, to zmienić docelową godzinę?
         - kilka trybów trudności?
             - normal
                 - tak jak jest teraz
             - hard
                 - pomyłki są karane utratą serca
             - impossible
-                - hard + przy starcie rundy nie resetują się serca
+                - to co w hard
+                - przy starcie rundy nie resetują się serca\
+                - zegarki wskazują godziny z dokładnością do 5 minut
+            - insane
+                - to co w impossible
+                - zegarki wskazują godziny z dokładnością do minuty
         - upiększyć grę
             - jakieś proste i estetyczne animacje i smaczki, które uprzyjemnią granie
         - dostosowanie do mobile
@@ -36,6 +35,7 @@
         <title>Time flies!</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preload" href="assets/digitaldream.ttf" as="font" type="font/ttf" crossorigin />
+        <link rel="stylesheet" href="./styles.css" />
         <style>
             @font-face {
                 font-family: "Digital Dream";
@@ -49,181 +49,33 @@
                 margin: 0;
                 overflow: hidden;
                 font-family: Verdana, Geneva, Tahoma, sans-serif;
+                background-color: var(--saffron);
+                color: var(--charcoal);
             }
 
             :root {
                 --default-radius: 4rem;
                 --default-diameter: calc(var(--default-radius) * 2);
                 --clock-margin: 0 5rem;
+
+                /* colors */
+                --charcoal: hsla(197, 37%, 24%, 1);
+                --persian-green: hsla(173, 58%, 39%, 1);
+                --persian-green-lighter: hsla(173, 58%, 59%, 1);
+                --saffron: hsla(43, 74%, 66%, 1);
+                --sandy-brown: hsla(27, 87%, 67%, 1);
+                --burnt-sienna: hsla(12, 76%, 61%, 1);
+                --burnt-sienna-darker: hsla(12, 76%, 41%, 1);
+
                 font-size: 12px;
                 box-sizing: border-box;
-            }
-
-            .row {
-                padding: 1rem 0;
-                overflow: hidden;
-                height: var(--default-diameter);
-                /* border-bottom: 1px solid red; */
-            }
-
-            .row:first-child {
-                /* border-top: 1px solid red; */
-            }
-
-            .tracks {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-            }
-
-            .track {
-                height: 100%;
-                display: flex;
-                width: max-content;
-
-                /*debug*/
-                /* outline: 1px solid black; */
-            }
-
-            .outer-circle {
-                --diameter: calc(var(--radius) * 2);
-                --pointer-width: 0.3rem;
-                --hover-shadow-color: lime;
-                /* width: var(--diameter);
-                height: var(--diameter); */
-                border-radius: 50%;
-                border: 0.3rem solid black;
-                position: relative;
-                margin: var(--clock-margin);
-                aspect-ratio: 1;
-            }
-
-            .outer-circle:hover,
-            .outer-circle:hover > * {
-                box-shadow: 0px 0px 5px 2px var(--hover-shadow-color);
-            }
-
-            .outer-circle:hover {
-                cursor: pointer;
-            }
-
-            .long-pointer {
-                height: calc(var(--radius) * 0.9);
-                width: 0.2rem;
-                background: black;
-                position: absolute;
-                bottom: 50%;
-                left: 50%;
-                transform: translateX(-50%) rotateZ(calc(var(--minutes) * 30deg));
-                transform-origin: bottom left;
-            }
-
-            .short-pointer {
-                height: calc(var(--radius) * 0.7);
-                width: 0.35rem;
-                background: black;
-                position: absolute;
-                bottom: 50%;
-                left: 50%;
-                transform: translateX(-50%) rotateZ(calc(var(--hour) * 30deg));
-                transform-origin: bottom left;
-            }
-
-            .top-bar {
-                display: flex;
-                justify-content: space-around;
-                align-items: center;
-                font-family: "Digital Dream";
-            }
-
-            .top-bar > * {
-                padding: 1rem;
-            }
-
-            .time {
-                font-size: 3rem;
-            }
-
-            .points {
-                font-size: 1.5rem;
-            }
-
-            .hp {
-                font-size: 2rem;
-            }
-
-            .empty {
-                width: var(--default-diameter);
-                margin: var(--clock-margin);
-            }
-
-            #looser {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-size: 2.5rem;
-                background: white;
-                padding: 2rem;
-                border: 1px solid black;
-                text-transform: uppercase;
-                text-align: center;
-            }
-
-            .main-button {
-                background: lime;
-                border: 1px solid black;
-                margin: 0 auto;
-                display: block;
-                padding: 0.5rem;
-                font-size: 1.5rem;
-                cursor: pointer;
-            }
-
-            #looser button {
-                margin-top: 2rem;
-            }
-
-            .game-screen {
-                display: flex;
-                flex-direction: column;
-                justify-content: space-around;
-                height: 100vh;
-            }
-
-            .main-menu-screen {
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                height: 100vh;
-            }
-
-            #looser #highscore {
-                text-transform: none;
-                font-size: 2rem;
-            }
-
-            .round-no {
-                position: absolute;
-                top: 50%;
-                right: 50%;
-                transform: translate(50%, -50%);
-                font-size: 2rem;
-                font-family: "Digital Dream";
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.3s;
-            }
-
-            .op1 {
-                opacity: 1;
             }
         </style>
     </head>
     <body>
         <div class="main-menu-screen">
+            <h1>Time flies!</h1>
             <p style="text-align: center; padding: 2rem 5rem; font-size: 1.5rem">
-                The time flies!<br />
                 Find all the clocks presenting the time from the upper center of your screen. Don't let the proper
                 clocks slip by. You'll loose your hearts!
             </p>
@@ -232,7 +84,7 @@
 
         <div class="game-screen">
             <div class="top-bar">
-                <div class="hp">❤️❤️❤️</div>
+                <div class="hp"></div>
                 <div class="time">3:15</div>
                 <div class="points"><span class="value">0</span> points</div>
             </div>
@@ -276,6 +128,29 @@
             <div class="row">
                 <div class="track"></div>
             </div>
+        </template>
+
+        <template id="t-heart">
+            <svg
+                version="1.1"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:xlink="http://www.w3.org/1999/xlink"
+                x="0px"
+                y="0px"
+                width="1.75em"
+                height="1.75em"
+                viewBox="0 0 640 480"
+                xml:space="preserve"
+            >
+                <path
+                    fill="var(--burnt-sienna)"
+                    fill-rule="evenodd"
+                    stroke-width="10%"
+                    stroke="var(--burnt-sienna-darker)"
+                    stroke-linejoin="round"
+                    d="m212.88298,23.34021c-137.447098,-2.471161 -264.63855,212.481247 105.925735,435.340698c0.406281,-0.73114 1.968781,-0.73114 2.375031,0c382.517975,-230.048691 234.665131,-451.640178 92.625702,-434.390638c-55.372711,6.724489 -81.503326,37.45645 -93.813263,63.887968c-12.309845,-26.431519 -38.440552,-57.163479 -93.81308,-63.887968c-4.438782,-0.53927 -8.866302,-0.87019 -13.300125,-0.95006z"
+                />
+            </svg>
         </template>
 
         <script type="module">
@@ -334,7 +209,8 @@
             }
 
             function fillHpElement(hp) {
-                hpElement.innerHTML = Array(hp).fill("❤️").join("");
+                const instance = instantiateTemplate("#t-heart");
+                hpElement.append(instance, instance.cloneNode(true), instance.cloneNode(true));
             }
 
             function closeYouLost() {
@@ -501,16 +377,16 @@
                 });
 
                 function setupTracks(roundNumber) {
-                    const reverseTracks = (() => {
-                        if (roundNumber >= 4) {
+                    const reverseTracksIndices = (() => {
+                        if (roundNumber >= 18) {
                             const set = new Set([randomInt(6), randomInt(6), randomInt(6)]);
                             return [...set];
                         }
-                        if (roundNumber >= 3) {
+                        if (roundNumber >= 11) {
                             const set = new Set([randomInt(6), randomInt(6)]);
                             return [...set];
                         }
-                        if (roundNumber >= 2) {
+                        if (roundNumber >= 5) {
                             return [randomInt(6)];
                         }
                         return [];
@@ -522,7 +398,7 @@
 
                         let initialTranslate, goalTranslate;
 
-                        if (reverseTracks.includes(i)) {
+                        if (reverseTracksIndices.includes(i)) {
                             console.log(`track ${i} is reverse`);
                             initialTranslate = `translateX(calc(-${randomInt(5)}rem - ${Math.ceil(
                                 t.getBoundingClientRect().width
