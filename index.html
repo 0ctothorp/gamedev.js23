@@ -31,6 +31,10 @@
             - jakieś proste i estetyczne animacje i smaczki, które uprzyjemnią granie
         - dostosowanie do mobile
             - może na mobile zegarki powinny latać z góry na dół?
+        - points -> score (liczbę zrobić większą niż tekst)
+        - zjedzone serduszka ustawiać na hidden zamiast wywalać z DOMu, żeby w UI nie skakały
+        - "back to menu"
+        -
  -->
 <!DOCTYPE html>
 <html>
@@ -77,16 +81,26 @@
         </style>
     </head>
     <body>
-        <div class="main-menu-screen">
+        <div class="screen main-menu-screen">
             <h1>Time flies!</h1>
             <p style="text-align: center; padding: 2rem 5rem; font-size: 1.5rem">
                 Find all the clocks presenting the time from the upper center of your screen. Don't let the proper
                 clocks slip by. You'll loose your hearts!
             </p>
-            <button class="main-button" onclick="play()">Play</button>
+            <button class="main-button" onclick="showDifficultyScreen()">Play</button>
         </div>
 
-        <div class="game-screen">
+        <div class="screen difficulty-screen" style="display: none">
+            <h1>Choose difficulty</h1>
+            <button class="main-button" onclick="play()">Normal</button>
+            <button class="main-button" onclick="play()">Hard</button>
+            <button class="main-button" onclick="play()">Insane</button>
+            <button class="main-button" onclick="play()">Impossible</button>
+
+            <button class="main-button" onclick="play()">Back</button>
+        </div>
+
+        <div class="screen game-screen" style="display: none">
             <div class="top-bar">
                 <div class="hp"></div>
                 <div class="time">3:15</div>
@@ -168,9 +182,11 @@
             const pointsElement = qs(".points .value");
             const looserElement = qs("#looser");
             const rowsWrapper = qs(".tracks");
+            const time = qs(".time");
+
             const mainMenu = qs(".main-menu-screen");
             const gameScreen = qs(".game-screen");
-            const time = qs(".time");
+            const difficultyScreen = qs(".difficulty-screen");
 
             const MINUTES_EASY = [0, 15, 30, 45];
             // const MINUTES_HARD = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
@@ -214,7 +230,12 @@
 
             function fillHpElement(hp) {
                 const instance = instantiateTemplate("#t-heart");
-                hpElement.append(instance, instance.cloneNode(true), instance.cloneNode(true));
+                const elements = [instance];
+                for (let i = 1; i < hp; i++) {
+                    elements.push(instance.cloneNode(true));
+                }
+                hpElement.innerHTML = "";
+                hpElement.append(...elements);
             }
 
             function closeYouLost() {
@@ -277,9 +298,6 @@
 
                 let hp = 3;
                 let points = carriedPoints;
-
-                mainMenu.style.display = "none";
-                gameScreen.style.display = null;
 
                 const { hour: ghour, minutes: gminutes } = goal;
 
@@ -455,7 +473,15 @@
                 };
             }
 
+            window.showDifficultyScreen = function showDifficultyScreen() {
+                mainMenu.style.display = "none";
+                difficultyScreen.style.display = null;
+            };
+
             window.play = function play(carriedPoints = 0) {
+                difficultyScreen.style.display = "none";
+                gameScreen.style.display = null;
+
                 const hour = randomInt(12) + 1;
                 const minutes = MINUTES_EASY[randomInt(4)];
                 startRound(20, { hour, minutes }, carriedPoints);

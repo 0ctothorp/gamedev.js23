@@ -27,7 +27,7 @@
 .outer-circle {
     --diameter: calc(var(--radius) * 2);
     --pointer-width: 0.3rem;
-    --hover-shadow-color: lime;
+    --hover-shadow-color: var(--persian-green-lighter);
     /* width: var(--diameter);
     height: var(--diameter); */
     border-radius: 50%;
@@ -39,7 +39,7 @@
 
 .outer-circle:hover,
 .outer-circle:hover > * {
-    box-shadow: 0px 0px 5px 2px var(--hover-shadow-color);
+    box-shadow: 0px 0px 3px 4px var(--hover-shadow-color);
 }
 
 .outer-circle:hover {
@@ -132,21 +132,29 @@
     margin-top: 2rem;
 }
 
+.screen {
+    height: 100vh;
+}
+
 .game-screen {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    height: 100vh;
 }
 
 .main-menu-screen {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 100vh;
 }
 
-.main-menu-screen h1 {
+.difficulty-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+h1 {
     font-family: "Digital Dream";
     margin: 0 auto;
 }
