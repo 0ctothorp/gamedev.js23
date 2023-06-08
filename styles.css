@@ -9,10 +9,13 @@
     /* border-top: 1px solid red; */
 }
 
-.tracks {
+.tracks-wrapper {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.tracks {
 }
 
 .track {
@@ -25,8 +28,7 @@
 }
 
 .outer-circle {
-    --diameter: calc(var(--radius) * 2);
-    --pointer-width: 0.3rem;
+    /* --diameter: calc(var(--radius) * 2); */
     --hover-shadow-color: var(--persian-green-lighter);
     /* width: var(--diameter);
     height: var(--diameter); */
@@ -47,25 +49,27 @@
 }
 
 .long-pointer {
-    height: calc(var(--radius) * 0.9);
+    height: calc(50% * 0.9);
     width: 0.2rem;
     background: var(--charcoal);
     position: absolute;
     bottom: 50%;
     left: 50%;
     transform: translateX(-50%) rotateZ(calc(var(--minutes) * 30deg));
-    transform-origin: bottom left;
+    transform-origin: bottom center;
+    border-radius: 1px;
 }
 
 .short-pointer {
-    height: calc(var(--radius) * 0.7);
+    height: calc(50% * 0.7);
     width: 0.35rem;
     background: var(--charcoal);
     position: absolute;
     bottom: 50%;
     left: 50%;
     transform: translateX(-50%) rotateZ(calc(var(--hour) * 30deg));
-    transform-origin: bottom left;
+    transform-origin: bottom center;
+    border-radius: 2px;
 }
 
 .top-bar {
@@ -158,7 +162,6 @@
 .game-screen {
     display: flex;
     flex-direction: column;
-    justify-content: space-around;
 }
 
 .main-menu-screen {

@@ -36,7 +36,7 @@
             }
 
             :root {
-                --default-radius: 4rem;
+                --default-radius: 5rem;
                 --default-diameter: calc(var(--default-radius) * 2);
                 --clock-margin: 0 5rem;
 
@@ -51,6 +51,9 @@
                 --burnt-sienna-darker: hsla(12, 76%, 41%, 1);
 
                 font-size: 12px;
+            }
+
+            * {
                 box-sizing: border-box;
             }
         </style>
@@ -82,16 +85,17 @@
                 <div class="time">3:15</div>
                 <div class="points"><span class="value">0</span> points</div>
             </div>
-            <div class="tracks"></div>
+            <div class="tracks-wrapper">
+                <div class="tracks"></div>
+            </div>
             <span class="round-no">Round 1</span>
         </div>
 
         <div id="looser" style="display: none">
-            <div>You lost 😥</div>
+            <div>You reached round #<span id="round-number"></span></div>
+            <div>Score: <span id="score">0</span></div>
             <div id="highscore" style="display: none">
-                <div>but...</div>
-                <div>🎉 Congrats! You have beaten your previous highscore of <span id="prev-hs">0</span></div>
-                <div>Your new highscore is <strong id="new-hs">0</strong> 🤩</div>
+                <div>You have beaten your previous highscore of <span id="prev-hs">0</span></div>
             </div>
             <div id="try-again-wrapper">
                 <button class="main-button" onclick="tryAgain(currentDifficultyCfg)">Try again</button>
@@ -151,7 +155,7 @@
         </template>
 
         <script type="module">
-            import { randomInt, instantiateTemplate, qs, playAudio } from "./js/utils.mjs";
+            import { randomInt, instantiateTemplate, qs, playAudio, getEl } from "./js/utils.mjs";
 
             const yaySfx = new Audio("assets/yay.wav");
             const wrongSfx = new Audio("assets/wrong.mp3");
@@ -176,8 +180,8 @@
             const HS_SERIALIZATION_KEY = "__time_flies__highscore";
 
             const BASE_TRACK_ANIMATION_TIME = 33000;
-            const STOP_SPEEDUP_AT_ROUND = 15;
-            const SPEEDUP_STEP = 300;
+            const STOP_SPEEDUP_AT_ROUND = 20;
+            const SPEEDUP_STEP = 350;
 
             function getTrackAnimationDuration(round) {
                 const base = BASE_TRACK_ANIMATION_TIME - SPEEDUP_STEP * Math.min(round, STOP_SPEEDUP_AT_ROUND);
@@ -218,19 +222,23 @@
             }
 
             function closeYouLost() {
-                looserElement.querySelector("#highscore").style.display = "none";
+                getEl("#highscore").style.display = "none";
                 looserElement.style.display = "none";
             }
 
             function showYouLost(points) {
                 looserElement.style.display = null;
+
+                getEl("#round-number").innerHTML = round;
+                getEl("#score").innerHTML = points;
+
                 const prevhs = localStorage.getItem(HS_SERIALIZATION_KEY);
                 if (prevhs === null) {
                     localStorage.setItem(HS_SERIALIZATION_KEY, points);
                 } else if (prevhs < points) {
-                    looserElement.querySelector("#prev-hs").innerHTML = prevhs.toString();
-                    looserElement.querySelector("#new-hs").innerHTML = points.toString();
-                    looserElement.querySelector("#highscore").style.display = null;
+                    getEl("#prev-hs").innerHTML = prevhs.toString();
+                    getEl("#new-hs").innerHTML = points.toString();
+                    getEl("#highscore").style.display = null;
                     localStorage.setItem(HS_SERIALIZATION_KEY, points);
                 }
             }
