@@ -406,7 +406,7 @@
 
                 function setupTracks(roundNumber) {
                     const reverseTracksIndices = (() => {
-                        if (roundNumber >= 0) {
+                        if (roundNumber >= 18) {
                             const set = new Set([randomInt(6), randomInt(6), randomInt(6)]);
                             return [...set];
                         }
