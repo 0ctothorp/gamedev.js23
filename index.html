@@ -53,7 +53,8 @@
                 font-size: 12px;
             }
 
-            @media (max-width: 922px) {
+            /* half of my laptops screen */
+            @media (max-width: 958px) {
                 :root {
                     font-size: 7.5px;
                 }
@@ -82,7 +83,7 @@
             <!-- <button class="main-button" onclick="play(DIFFICULTY_CONFIGS.INSANE)">Insane</button>
             <button class="main-button" onclick="play(DIFFICULTY_CONFIGS.IMPOSSIBLE)">Impossible</button> -->
 
-            <button class="secondary-button" onclick=""><- Back</button>
+            <button class="secondary-button" onclick="showScreen('main-menu')"><- Back</button>
         </div>
 
         <div class="screen game-screen" style="display: none">
@@ -530,6 +531,12 @@
 
                 return round;
             }
+
+            window.showScreen = function showScreen(name) {
+                const screens = getEl(".screen", true);
+                for (const s of screens) s.style.display = "none";
+                getEl(`.${name}-screen`).style.display = null;
+            };
         </script>
     </body>
 </html>
