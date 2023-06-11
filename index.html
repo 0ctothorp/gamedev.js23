@@ -164,6 +164,7 @@
         <script type="module">
             import { randomInt, instantiateTemplate, qs, playAudio, getEl } from "./js/utils.mjs";
 
+            // TODO: make a progress bar for loading the assets?
             const yaySfx = new Audio("assets/yay.wav");
             const wrongSfx = new Audio("assets/wrong.mp3");
             const oofSfx = new Audio("assets/oof.wav");
@@ -189,6 +190,39 @@
             const BASE_TRACK_ANIMATION_TIME = 33000;
             const STOP_SPEEDUP_AT_ROUND = 20;
             const SPEEDUP_STEP = 350;
+
+            /** @typedef {{
+             *      isPaused: boolean
+             *      trackAnimations: Animation[]
+             * }} GameState */
+
+            function getInitialGameState() {
+                // TODO: move the rest of the fragmented state inside here
+                return {
+                    isPaused: false,
+                    /** @type {Animation[]} */
+                    trackAnimations: [],
+                };
+            }
+
+            /** @type {GameState} */
+            const GAME_STATE = getInitialGameState();
+
+            /** @param {GameState} gameState */
+            function pause(gameState) {
+                gameState.isPaused = true;
+                for (const anim of gameState.trackAnimations) {
+                    anim.pause();
+                }
+            }
+
+            /** @param {GameState} gameState */
+            function unPause(gameState) {
+                gameState.isPaused = false;
+                for (const anim of gameState.trackAnimations) {
+                    anim.play();
+                }
+            }
 
             function getTrackAnimationDuration(round) {
                 const base = BASE_TRACK_ANIMATION_TIME - SPEEDUP_STEP * Math.min(round, STOP_SPEEDUP_AT_ROUND);
@@ -320,7 +354,7 @@
                 // debug
                 // console.group("clocks per column");
                 // console.log("clocksPerColumn", clocksPerColumn);
-                // Losuję dla każdej kolumny, w którym wierszu ma się znaleźć zegarek.
+                // Losuję dla każdej kolumny, w którym wierszu (i w ilu) ma się znaleźć zegarek.
                 // Czyli dla każdej kolumny co najwyżej jeden wiersz będzie miał zegarek
                 const clockCellsSet = new Set();
                 for (let i = 0; i < trackLength; i++) {
@@ -423,26 +457,26 @@
 
                     // console.group("tracks durations");
                     for (let i = 0; i < tracks.length; i++) {
-                        const t = tracks[i];
+                        const track = tracks[i];
 
                         let initialTranslate, goalTranslate;
 
                         if (reverseTracksIndices.includes(i)) {
                             // console.log(`track ${i} is reverse`);
                             initialTranslate = `translateX(calc(-${randomInt(5)}rem - ${Math.ceil(
-                                t.getBoundingClientRect().width
+                                track.getBoundingClientRect().width
                             )}px))`;
                             goalTranslate = `translateX(calc(100vw))`;
-                            for (const c of t.children) c.dataset.reverse = true;
+                            for (const c of track.children) c.dataset.reverse = true;
                         } else {
                             initialTranslate = `translateX(calc(100vw + ${randomInt(5)}rem))`;
-                            goalTranslate = `translateX(${-Math.ceil(t.getBoundingClientRect().width)}px)`;
+                            goalTranslate = `translateX(${-Math.ceil(track.getBoundingClientRect().width)}px)`;
                         }
 
-                        t.style.transform = initialTranslate;
+                        track.style.transform = initialTranslate;
 
-                        const bounds = t.getClientRects();
-                        const anim = [{ transform: initialTranslate }, { transform: goalTranslate }];
+                        const bounds = track.getClientRects();
+                        const trackAnimation = [{ transform: initialTranslate }, { transform: goalTranslate }];
                         const duration = getTrackAnimationDuration(round);
 
                         // debug
@@ -454,7 +488,8 @@
                             delay: randomInt(5000),
                         };
 
-                        const animation = t.animate(anim, options);
+                        const animation = track.animate(trackAnimation, options);
+                        GAME_STATE.trackAnimations.push(animation);
                     }
                     // console.groupEnd("track durations");
                 }
@@ -537,6 +572,20 @@
                 for (const s of screens) s.style.display = "none";
                 getEl(`.${name}-screen`).style.display = null;
             };
+
+            addEventListener("keyup", (ev) => {
+                if (ev.key === "Escape") {
+                    // TODO: hide this logic in a togglePause function which
+                    // will also check if there's any round that was started.
+                    // There's no point in pausing a main menu - this might actually
+                    // cause some bugs.
+                    if (GAME_STATE.isPaused) {
+                        unPause(GAME_STATE);
+                    } else {
+                        pause(GAME_STATE);
+                    }
+                }
+            });
         </script>
     </body>
 </html>
