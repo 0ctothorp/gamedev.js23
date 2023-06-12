@@ -98,7 +98,7 @@
             <span class="round-no">Round 1</span>
         </div>
 
-        <div id="looser" style="display: none">
+        <div id="looser-popup" class="popup" style="display: none">
             <div>You reached round #<span id="round-number"></span></div>
             <div>Score: <span id="score">0</span></div>
             <div id="highscore" style="display: none">
@@ -107,6 +107,14 @@
             <div id="try-again-wrapper">
                 <button class="main-button" onclick="tryAgain(currentDifficultyCfg)">Try again</button>
                 <button class="secondary-button" onclick="showDifficultyScreen()">Change difficulty</button>
+            </div>
+        </div>
+
+        <div id="pause-popup" class="popup" style="display: none">
+            <div>
+                <!-- TODO: add click handlers -->
+                <button class="main-button" onclick="">Back to menu</button>
+                <button class="secondary-button" onclick="">Close</button>
             </div>
         </div>
 
@@ -162,7 +170,7 @@
         </template>
 
         <script type="module">
-            import { randomInt, instantiateTemplate, qs, playAudio, getEl } from "./js/utils.mjs";
+            import { randomInt, instantiateTemplate, qs, playAudio, getEl, getEls } from "./js/utils.mjs";
 
             // TODO: make a progress bar for loading the assets?
             const yaySfx = new Audio("assets/yay.wav");
@@ -171,7 +179,7 @@
 
             const hpElement = qs(".hp");
             const pointsElement = qs(".points .value");
-            const looserElement = qs("#looser");
+            const looserElement = qs("#looser-popup");
             const rowsWrapper = qs(".tracks");
             const time = qs(".time");
 
@@ -196,9 +204,15 @@
              *      trackAnimations: Animation[]
              * }} GameState */
 
+            /**
+             * @typedef { "main-menu" | "difficulty" | "game" } Screen
+             */
+
             function getInitialGameState() {
                 // TODO: move the rest of the fragmented state inside here
                 return {
+                    /** @type {Screen} */
+                    screen: "main-menu",
                     isPaused: false,
                     /** @type {Animation[]} */
                     trackAnimations: [],
@@ -210,6 +224,7 @@
 
             /** @param {GameState} gameState */
             function pause(gameState) {
+                if (gameState.screen !== "game") return;
                 gameState.isPaused = true;
                 for (const anim of gameState.trackAnimations) {
                     anim.pause();
@@ -218,11 +233,37 @@
 
             /** @param {GameState} gameState */
             function unPause(gameState) {
+                if (gameState.screen !== "game") return;
                 gameState.isPaused = false;
                 for (const anim of gameState.trackAnimations) {
                     anim.play();
                 }
             }
+
+            /** @param {GameState} gameState */
+            function togglePause(gameState) {
+                if (gameState.screen !== "game") return;
+                if (gameState.isPaused) {
+                    unPause(gameState);
+                    getEl("#pause-popup").style.display = "none";
+                } else {
+                    pause(gameState);
+                    getEl("#pause-popup").style.display = null;
+                }
+            }
+
+            /**
+             * @param {GameState} gameState
+             * @param {Screen} screen
+             */
+            function changeScreen(gameState, screen) {
+                gameState.screen = screen;
+                const screens = getEls(".screen");
+                for (const s of screens) s.style.display = "none";
+                getEl(`.${screen}-screen`).style.display = null;
+            }
+
+            window.showScreen = (name) => changeScreen(GAME_STATE, name);
 
             function getTrackAnimationDuration(round) {
                 const base = BASE_TRACK_ANIMATION_TIME - SPEEDUP_STEP * Math.min(round, STOP_SPEEDUP_AT_ROUND);
@@ -526,18 +567,15 @@
             }
 
             window.showDifficultyScreen = function showDifficultyScreen() {
-                mainMenu.style.display = "none";
                 closeYouLost();
-
-                difficultyScreen.style.display = null;
+                changeScreen(GAME_STATE, "difficulty");
             };
 
             window.play = function play({ carriedPoints = 0, cfg }) {
-                console.log({ cfg });
+                // TODO: store cfg in game state
                 window.currentDifficultyCfg = cfg;
 
-                difficultyScreen.style.display = "none";
-                gameScreen.style.display = null;
+                changeScreen(GAME_STATE, "game");
 
                 const hour = randomInt(12) + 1;
                 const minutes = MINUTES_EASY[randomInt(4)];
@@ -567,23 +605,9 @@
                 return round;
             }
 
-            window.showScreen = function showScreen(name) {
-                const screens = getEl(".screen", true);
-                for (const s of screens) s.style.display = "none";
-                getEl(`.${name}-screen`).style.display = null;
-            };
-
             addEventListener("keyup", (ev) => {
                 if (ev.key === "Escape") {
-                    // TODO: hide this logic in a togglePause function which
-                    // will also check if there's any round that was started.
-                    // There's no point in pausing a main menu - this might actually
-                    // cause some bugs.
-                    if (GAME_STATE.isPaused) {
-                        unPause(GAME_STATE);
-                    } else {
-                        pause(GAME_STATE);
-                    }
+                    togglePause(GAME_STATE);
                 }
             });
         </script>

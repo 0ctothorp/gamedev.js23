@@ -26,3 +26,5 @@ export function getEl(selector, multiple = false) {
     }
     return DOM_NODES.get(selector);
 }
+
+export const getEls = (selector) => getEl(selector, true);
