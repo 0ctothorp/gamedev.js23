@@ -112,9 +112,9 @@
 
         <div id="pause-popup" class="popup" style="display: none">
             <div>
-                <!-- TODO: add click handlers -->
-                <button class="main-button" onclick="">Back to menu</button>
-                <button class="secondary-button" onclick="">Close</button>
+                <h2>Pause</h2>
+                <button class="main-button" onclick="backToMenu()">Back to menu</button>
+                <button class="secondary-button" onclick="togglePause()">Close</button>
             </div>
         </div>
 
@@ -252,6 +252,8 @@
                 }
             }
 
+            window.togglePause = () => togglePause(GAME_STATE);
+
             /**
              * @param {GameState} gameState
              * @param {Screen} screen
@@ -264,6 +266,13 @@
             }
 
             window.showScreen = (name) => changeScreen(GAME_STATE, name);
+            window.backToMenu = () => {
+                changeScreen(GAME_STATE, "main-menu");
+                // simple way of stopping the game
+                getEl(".tracks").innerHTML = "";
+                // some popups might need some internal elements to hide also
+                getEls(".popup").forEach((x) => (x.style.display = "none"));
+            };
 
             function getTrackAnimationDuration(round) {
                 const base = BASE_TRACK_ANIMATION_TIME - SPEEDUP_STEP * Math.min(round, STOP_SPEEDUP_AT_ROUND);

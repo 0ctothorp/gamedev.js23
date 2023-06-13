@@ -1,3 +1,5 @@
+/* TODO: use a css reset/normalize? */
+
 .row {
     padding: 1rem 0;
     overflow: hidden;
@@ -212,5 +214,15 @@ h1 {
     display: grid;
     place-items: center;
     background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(6px);
+    text-align: center;
+    font-family: "Digital Dream";
+}
+
+#pause-popup > div {
+    padding: 2rem;
+    background: white;
+    border: 1px solid black;
+    display: grid;
+    gap: 2rem;
 }
