@@ -15,8 +15,9 @@
 <html>
     <head>
         <title>Time flies!</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preload" href="assets/digitaldream.ttf" as="font" type="font/ttf" crossorigin />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="./reset.css" />
         <link rel="stylesheet" href="./styles.css" />
         <style>
             @font-face {
@@ -78,8 +79,17 @@
 
         <div class="screen difficulty-screen" style="display: none">
             <h1>Choose difficulty</h1>
-            <button class="main-button" onclick="play({ cfg: DIFFICULTY_CONFIGS.NORMAL })">Normal</button>
-            <button class="main-button" onclick="play({ cfg: DIFFICULTY_CONFIGS.HARD })">Hard</button>
+            <div class="difficulty-info" style="display: block"></div>
+            <div data-difficulty="normal" class="difficulty-info">
+                Just normal mode. Clicking wrong clocks won't cause you trouble.
+            </div>
+            <div data-difficulty="hard" class="difficulty-info">Clicking on wrong clocks will cause you trouble.</div>
+            <button data-difficulty="normal" class="main-button" onclick="play({ cfg: DIFFICULTY_CONFIGS.NORMAL })">
+                Normal
+            </button>
+            <button data-difficulty="hard" class="main-button" onclick="play({ cfg: DIFFICULTY_CONFIGS.HARD })">
+                Hard
+            </button>
             <!-- <button class="main-button" onclick="play(DIFFICULTY_CONFIGS.INSANE)">Insane</button>
             <button class="main-button" onclick="play(DIFFICULTY_CONFIGS.IMPOSSIBLE)">Impossible</button> -->
 
@@ -90,7 +100,8 @@
             <div class="top-bar">
                 <div class="hp"></div>
                 <div class="time">3:15</div>
-                <div class="points"><span class="value">0</span> points</div>
+                <div class="points"><span class="value">0</span><span>points</span></div>
+                <button id="pause-button" type="button" onclick="togglePause()">⏸️</button>
             </div>
             <div class="tracks-wrapper">
                 <div class="tracks"></div>
@@ -100,7 +111,7 @@
 
         <div id="looser-popup" class="popup" style="display: none">
             <div>You reached round #<span id="round-number"></span></div>
-            <div>Score: <span id="score">0</span></div>
+            <div>Your Score: <span id="score">0</span></div>
             <div id="highscore" style="display: none">
                 <div>You have beaten your previous highscore of <span id="prev-hs">0</span></div>
             </div>

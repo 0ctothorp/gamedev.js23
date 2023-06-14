@@ -81,16 +81,21 @@
     font-family: "Digital Dream";
 }
 
-.top-bar > * {
-    padding: 1rem;
-}
-
 .time {
     font-size: 3rem;
 }
 
 .points {
     font-size: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2px 0;
+}
+
+.points .value {
+    font-size: 2rem;
 }
 
 .hp {
@@ -166,6 +171,12 @@
     gap: 1rem;
 }
 
+.difficulty-info {
+    border: 1px solid black;
+    padding: 1rem;
+    display: none;
+}
+
 h1 {
     font-family: "Digital Dream";
     margin: 0 auto;
@@ -204,8 +215,10 @@ h1 {
     background: white;
     padding: 2rem;
     border: 1px solid black;
-    text-transform: uppercase;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 #pause-popup {
@@ -225,4 +238,14 @@ h1 {
     border: 1px solid black;
     display: grid;
     gap: 2rem;
+}
+
+#pause-button {
+    font-size: 4rem;
+}
+
+#try-again-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
