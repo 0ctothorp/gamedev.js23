@@ -79,19 +79,33 @@
 
         <div class="screen difficulty-screen" style="display: none">
             <h1>Choose difficulty</h1>
-            <div class="difficulty-info" style="display: block"></div>
-            <div data-difficulty="normal" class="difficulty-info">
-                Just normal mode. Clicking wrong clocks won't cause you trouble.
+            <div class="infos">
+                <div data-difficulty="normal" class="difficulty-info">
+                    Just normal mode. Clicking wrong clocks won't cause you trouble.
+                </div>
+                <div data-difficulty="hard" class="difficulty-info">
+                    Stay alert - clicking on wrong clocks will cause you trouble.
+                </div>
             </div>
-            <div data-difficulty="hard" class="difficulty-info">Clicking on wrong clocks will cause you trouble.</div>
-            <button data-difficulty="normal" class="main-button" onclick="play({ cfg: DIFFICULTY_CONFIGS.NORMAL })">
+
+            <button
+                data-difficulty="normal"
+                class="main-button"
+                onclick="play({ cfg: DIFFICULTY_CONFIGS.NORMAL })"
+                onmouseenter="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseEnter(this)"
+                onmouseleave="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseLeave(this)"
+            >
                 Normal
             </button>
-            <button data-difficulty="hard" class="main-button" onclick="play({ cfg: DIFFICULTY_CONFIGS.HARD })">
+            <button
+                data-difficulty="hard"
+                class="main-button"
+                onclick="play({ cfg: DIFFICULTY_CONFIGS.HARD })"
+                onmouseenter="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseEnter(this)"
+                onmouseleave="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseLeave(this)"
+            >
                 Hard
             </button>
-            <!-- <button class="main-button" onclick="play(DIFFICULTY_CONFIGS.INSANE)">Insane</button>
-            <button class="main-button" onclick="play(DIFFICULTY_CONFIGS.IMPOSSIBLE)">Impossible</button> -->
 
             <button class="secondary-button" onclick="showScreen('main-menu')"><- Back</button>
         </div>
@@ -197,6 +211,30 @@
             const mainMenu = qs(".main-menu-screen");
             const gameScreen = qs(".game-screen");
             const difficultyScreen = qs(".difficulty-screen");
+
+            // setup event handlers for difficulty screen
+            function setupDifficultyScreen() {
+                const descriptions = getEls(".difficulty-info[data-difficulty]");
+
+                function getDescriptionElFor(difficulty) {
+                    return getEl(`.difficulty-info[data-difficulty="${difficulty}"]`);
+                }
+
+                window.DIFFICULTY_SCREEN_EVENT_HANDLERS = {
+                    onDifficultyButtonMouseEnter: (btn) => {
+                        const difficulty = btn.dataset.difficulty;
+                        descriptions.forEach((x) => (x.style.display = "none"));
+                        const descriptionEl = getDescriptionElFor(difficulty);
+                        descriptionEl.style.display = null;
+                    },
+                    onDifficultyButtonMouseLeave: (btn) => {
+                        const difficulty = btn.dataset.difficulty;
+                        descriptions.forEach((x) => (x.style.display = "none"));
+                    },
+                };
+            }
+
+            setupDifficultyScreen();
 
             const MINUTES_EASY = [0, 15, 30, 45];
             // const MINUTES_HARD = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
