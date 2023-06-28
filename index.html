@@ -51,11 +51,24 @@
                 --burnt-sienna: hsla(12, 76%, 61%, 1);
                 --burnt-sienna-darker: hsla(12, 76%, 41%, 1);
 
+                /* crazygames.io breakpoints */
+                --cg-bp-w-lg: 1128px;
+                --cg-bp-h-lg: 615px;
+                --cg-bp-w-md: 938px;
+                --cg-bp-h-md: 503px;
+                --cg-bp-w-sm: 922px;
+                --cg-bp-h-sm: 487px;
+
                 font-size: 12px;
             }
 
-            /* half of my laptops screen */
-            @media (max-width: 958px) {
+            @media (max-width: 1128px) {
+                :root {
+                    font-size: 9px;
+                }
+            }
+
+            @media (max-width: 938px) {
                 :root {
                     font-size: 7.5px;
                 }
@@ -64,13 +77,38 @@
             * {
                 box-sizing: border-box;
             }
+
+            /*
+            body.cg-bp-lg .screen {
+                width: var(--cg-bp-w-lg) !important;
+                height: var(--cg-bp-h-lg) !important;
+                outline: 2px solid red;
+                outline-offset: -2px;
+            }
+
+            body.cg-bp-md .screen {
+                width: var(--cg-bp-w-md) !important;
+                height: var(--cg-bp-h-md) !important;
+                outline: 1px hsla(12, 76%, 41%, 1);
+                outline: 2px solid red;
+                outline-offset: -2px;
+            }
+
+            body.cg-bp-sm .screen {
+                width: var(--cg-bp-w-sm) !important;
+                height: var(--cg-bp-h-sm) !important;
+                outline: 1px hsla(12, 76%, 41%, 1);
+                outline: 2px solid red;
+                outline-offset: -2px;
+            }
+            */
         </style>
         <script defer src="./js/consts.js"></script>
     </head>
     <body>
         <div class="screen main-menu-screen">
             <h1>Time flies!</h1>
-            <p style="text-align: center; padding: 2rem 5rem; font-size: 1.5rem">
+            <p style="text-align: center; padding: 2rem 5rem; font-size: 2rem">
                 Find all the clocks presenting the time from the upper center of your screen. Don't let the proper
                 clocks slip by. You'll loose your hearts!
             </p>
@@ -80,10 +118,10 @@
         <div class="screen difficulty-screen" style="display: none">
             <h1>Choose difficulty</h1>
             <div class="infos">
-                <div data-difficulty="normal" class="difficulty-info">
+                <div data-difficulty="normal" class="difficulty-info" style="display: none">
                     Just normal mode. Clicking wrong clocks won't cause you trouble.
                 </div>
-                <div data-difficulty="hard" class="difficulty-info">
+                <div data-difficulty="hard" class="difficulty-info" style="display: none">
                     Stay alert - clicking on wrong clocks will cause you trouble.
                 </div>
             </div>

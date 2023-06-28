@@ -3,3 +3,7 @@ button {
     border: none;
     cursor: pointer;
 }
+
+h1 {
+    font-size: 3rem;
+}
