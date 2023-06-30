@@ -15,14 +15,14 @@
 <html>
     <head>
         <title>Time flies!</title>
-        <link rel="preload" href="assets/digitaldream.ttf" as="font" type="font/ttf" crossorigin />
+        <link rel="preload" href="./assets/digitaldream.ttf" as="font" type="font/ttf" crossorigin />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="stylesheet" href="./reset.css" />
         <link rel="stylesheet" href="./styles.css" />
         <style>
             @font-face {
                 font-family: "Digital Dream";
-                src: url("assets/digitaldream.ttf");
+                src: url("./assets/digitaldream.ttf");
                 font-display: block;
             }
 
@@ -103,10 +103,20 @@
             }
             */
         </style>
-        <script defer src="./js/consts.js"></script>
+        <script src="./js/consts.js"></script>
+        <script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
     </head>
     <body>
         <div class="screen main-menu-screen">
+            <div style="width: 25rem; height: 25rem; margin: 0 auto; margin-bottom: 4rem">
+                <div
+                    class="outer-circle"
+                    style="--radius: 4rem; --hour: 1; --minutes: 45; pointer-events: none; width: 100%; margin: 0"
+                >
+                    <div class="long-pointer"></div>
+                    <div class="short-pointer"></div>
+                </div>
+            </div>
             <h1>Time flies!</h1>
             <p style="text-align: center; padding: 2rem 5rem; font-size: 2rem">
                 Find all the clocks presenting the time from the upper center of your screen. Don't let the proper
@@ -153,7 +163,17 @@
                 <div class="hp"></div>
                 <div class="time">3:15</div>
                 <div class="points"><span class="value">0</span><span>points</span></div>
-                <button id="pause-button" type="button" onclick="togglePause()">⏸️</button>
+                <button id="pause-button" type="button" onclick="togglePause()">
+                    <svg
+                        version="1.1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewbox="0 0 60 100"
+                        style="width: 3rem; height: 3rem"
+                    >
+                        <rect width="20" height="100" x="0" y="0" />
+                        <rect width="20" height="100" x="40" y="0" />
+                    </svg>
+                </button>
             </div>
             <div class="tracks-wrapper">
                 <div class="tracks"></div>
@@ -162,6 +182,7 @@
         </div>
 
         <div id="looser-popup" class="popup" style="display: none">
+            <div id="banner-container" style="width: 300px; height: 250px; margin: 0 auto; margin-bottom: 1rem"></div>
             <div>You reached round #<span id="round-number"></span></div>
             <div>Your Score: <span id="score">0</span></div>
             <div id="highscore" style="display: none">
@@ -235,10 +256,11 @@
         <script type="module">
             import { randomInt, instantiateTemplate, qs, playAudio, getEl, getEls } from "./js/utils.mjs";
 
-            // TODO: make a progress bar for loading the assets?
-            const yaySfx = new Audio("assets/yay.wav");
-            const wrongSfx = new Audio("assets/wrong.mp3");
-            const oofSfx = new Audio("assets/oof.wav");
+            window.CrazyGames.SDK.game.sdkGameLoadingStart();
+
+            const yaySfx = new Audio("./assets/yay.wav");
+            const wrongSfx = new Audio("./assets/wrong.mp3");
+            const oofSfx = new Audio("./assets/oof.wav");
 
             const hpElement = qs(".hp");
             const pointsElement = qs(".points .value");
@@ -280,7 +302,6 @@
             //     .fill()
             //     .map((_, i) => i);
             const TRACKS_NUM = 6;
-            const HS_SERIALIZATION_KEY = "__time_flies__highscore";
 
             const BASE_TRACK_ANIMATION_TIME = 33000;
             const STOP_SPEEDUP_AT_ROUND = 20;
@@ -316,6 +337,7 @@
                 for (const anim of gameState.trackAnimations) {
                     anim.pause();
                 }
+                window.CrazyGames.SDK.game.gameplayStop();
             }
 
             /** @param {GameState} gameState */
@@ -325,6 +347,7 @@
                 for (const anim of gameState.trackAnimations) {
                     anim.play();
                 }
+                window.CrazyGames.SDK.game.gameplayStart();
             }
 
             /** @param {GameState} gameState */
@@ -359,6 +382,7 @@
                 getEl(".tracks").innerHTML = "";
                 // some popups might need some internal elements to hide also
                 getEls(".popup").forEach((x) => (x.style.display = "none"));
+                window.CrazyGames.SDK.game.gameplayStop();
             };
 
             function getTrackAnimationDuration(round) {
@@ -405,20 +429,30 @@
             }
 
             function showYouLost(points) {
+                window.CrazyGames.SDK.banner.requestBanner({
+                    id: "banner-container",
+                    width: 300,
+                    height: 250,
+                });
+
                 looserElement.style.display = null;
 
                 getEl("#round-number").innerHTML = round;
                 getEl("#score").innerHTML = points;
 
-                const prevhs = localStorage.getItem(HS_SERIALIZATION_KEY);
+                const lsKey = LS_KEYS[`HS_${window.currentDifficultyCfg.name}`.toUpperCase()];
+
+                const prevhs = localStorage.getItem(lsKey);
                 if (prevhs === null) {
-                    localStorage.setItem(HS_SERIALIZATION_KEY, points);
+                    localStorage.setItem(lsKey, points);
                 } else if (prevhs < points) {
-                    getEl("#prev-hs").innerHTML = prevhs.toString();
-                    getEl("#new-hs").innerHTML = points.toString();
+                    getEl("#prev-hs").innerHTML = prevhs;
                     getEl("#highscore").style.display = null;
-                    localStorage.setItem(HS_SERIALIZATION_KEY, points);
+                    localStorage.setItem(lsKey, points);
+                    window.CrazyGames.SDK.game.happytime();
                 }
+
+                window.CrazyGames.SDK.game.gameplayStop();
             }
 
             function resetTracks(tracks) {
@@ -676,6 +710,7 @@
                 const hour = randomInt(12) + 1;
                 const minutes = MINUTES_EASY[randomInt(4)];
                 startRound(20, { hour, minutes }, carriedPoints, cfg);
+                window.CrazyGames.SDK.game.gameplayStart();
             };
 
             window.tryAgain = function tryAgain(cfg) {
@@ -706,6 +741,18 @@
                     togglePause(GAME_STATE);
                 }
             });
+
+            window.addEventListener("wheel", (event) => event.preventDefault(), {
+                passive: false,
+            });
+
+            window.addEventListener("keydown", (event) => {
+                if (["ArrowUp", "ArrowDown", " "].includes(event.key)) {
+                    event.preventDefault();
+                }
+            });
+
+            window.CrazyGames.SDK.game.sdkGameLoadingStop();
         </script>
     </body>
 </html>
