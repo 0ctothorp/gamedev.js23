@@ -51,14 +51,6 @@
                 --burnt-sienna: hsla(12, 76%, 61%, 1);
                 --burnt-sienna-darker: hsla(12, 76%, 41%, 1);
 
-                /* crazygames.io breakpoints */
-                --cg-bp-w-lg: 1128px;
-                --cg-bp-h-lg: 615px;
-                --cg-bp-w-md: 938px;
-                --cg-bp-h-md: 503px;
-                --cg-bp-w-sm: 922px;
-                --cg-bp-h-sm: 487px;
-
                 font-size: 12px;
             }
 
@@ -77,34 +69,8 @@
             * {
                 box-sizing: border-box;
             }
-
-            /*
-            body.cg-bp-lg .screen {
-                width: var(--cg-bp-w-lg) !important;
-                height: var(--cg-bp-h-lg) !important;
-                outline: 2px solid red;
-                outline-offset: -2px;
-            }
-
-            body.cg-bp-md .screen {
-                width: var(--cg-bp-w-md) !important;
-                height: var(--cg-bp-h-md) !important;
-                outline: 1px hsla(12, 76%, 41%, 1);
-                outline: 2px solid red;
-                outline-offset: -2px;
-            }
-
-            body.cg-bp-sm .screen {
-                width: var(--cg-bp-w-sm) !important;
-                height: var(--cg-bp-h-sm) !important;
-                outline: 1px hsla(12, 76%, 41%, 1);
-                outline: 2px solid red;
-                outline-offset: -2px;
-            }
-            */
         </style>
         <script src="./js/consts.js"></script>
-        <script src="https://sdk.crazygames.com/crazygames-sdk-v2.js"></script>
     </head>
     <body>
         <div class="screen main-menu-screen">
@@ -256,8 +222,6 @@
         <script type="module">
             import { randomInt, instantiateTemplate, qs, playAudio, getEl, getEls } from "./js/utils.mjs";
 
-            window.CrazyGames.SDK.game.sdkGameLoadingStart();
-
             const yaySfx = new Audio("./assets/yay.wav");
             const wrongSfx = new Audio("./assets/wrong.mp3");
             const oofSfx = new Audio("./assets/oof.wav");
@@ -337,7 +301,6 @@
                 for (const anim of gameState.trackAnimations) {
                     anim.pause();
                 }
-                window.CrazyGames.SDK.game.gameplayStop();
             }
 
             /** @param {GameState} gameState */
@@ -347,7 +310,6 @@
                 for (const anim of gameState.trackAnimations) {
                     anim.play();
                 }
-                window.CrazyGames.SDK.game.gameplayStart();
             }
 
             /** @param {GameState} gameState */
@@ -382,7 +344,6 @@
                 getEl(".tracks").innerHTML = "";
                 // some popups might need some internal elements to hide also
                 getEls(".popup").forEach((x) => (x.style.display = "none"));
-                window.CrazyGames.SDK.game.gameplayStop();
             };
 
             function getTrackAnimationDuration(round) {
@@ -429,12 +390,6 @@
             }
 
             function showYouLost(points) {
-                window.CrazyGames.SDK.banner.requestBanner({
-                    id: "banner-container",
-                    width: 300,
-                    height: 250,
-                });
-
                 looserElement.style.display = null;
 
                 getEl("#round-number").innerHTML = round;
@@ -449,10 +404,7 @@
                     getEl("#prev-hs").innerHTML = prevhs;
                     getEl("#highscore").style.display = null;
                     localStorage.setItem(lsKey, points);
-                    window.CrazyGames.SDK.game.happytime();
                 }
-
-                window.CrazyGames.SDK.game.gameplayStop();
             }
 
             function resetTracks(tracks) {
@@ -710,7 +662,6 @@
                 const hour = randomInt(12) + 1;
                 const minutes = MINUTES_EASY[randomInt(4)];
                 startRound(20, { hour, minutes }, carriedPoints, cfg);
-                window.CrazyGames.SDK.game.gameplayStart();
             };
 
             window.tryAgain = function tryAgain(cfg) {
@@ -751,8 +702,6 @@
                     event.preventDefault();
                 }
             });
-
-            window.CrazyGames.SDK.game.sdkGameLoadingStop();
         </script>
     </body>
 </html>
