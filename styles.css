@@ -1,14 +1,11 @@
-/* TODO: use a css reset/normalize? */
-
 .row {
     padding: 1rem 0;
     overflow: hidden;
     height: var(--default-diameter);
-    /* border-bottom: 1px solid red; */
 }
 
-.row:first-child {
-    /* border-top: 1px solid red; */
+.row.debug {
+    border-top: 1px solid red;
 }
 
 .tracks-wrapper {
@@ -17,16 +14,14 @@
     height: 100%;
 }
 
-.tracks {
-}
-
 .track {
     height: 100%;
     display: flex;
     width: max-content;
+}
 
-    /*debug*/
-    /* outline: 1px solid black; */
+.track.debug {
+    outline: 1px solid black;
 }
 
 .outer-circle {
