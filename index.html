@@ -17,8 +17,9 @@
         <title>Time flies!</title>
         <link rel="preload" href="./assets/digitaldream.ttf" as="font" type="font/ttf" crossorigin />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="stylesheet" href="./reset.css" />
-        <link rel="stylesheet" href="./styles.css" />
+        <link rel="stylesheet" href="./css/reset.css" />
+        <link rel="stylesheet" href="./css/clock.css" />
+        <link rel="stylesheet" href="./css/styles.css" />
         <style>
             @font-face {
                 font-family: "Digital Dream";
@@ -28,8 +29,6 @@
 
             html,
             body {
-                padding: 0;
-                margin: 0;
                 overflow: hidden;
                 font-family: Verdana, Geneva, Tahoma, sans-serif;
                 background-color: var(--saffron);
@@ -74,14 +73,8 @@
     </head>
     <body>
         <div class="screen main-menu-screen">
-            <div style="width: 25rem; height: 25rem; margin: 0 auto; margin-bottom: 4rem">
-                <div
-                    class="outer-circle"
-                    style="--radius: 4rem; --hour: 1; --minutes: 45; pointer-events: none; width: 100%; margin: 0"
-                >
-                    <div class="long-pointer"></div>
-                    <div class="short-pointer"></div>
-                </div>
+            <div class="clock" style="width: 25rem; height: 25rem; margin: 0 auto; margin-bottom: 4rem; --radius: 8rem">
+                <!-- clock slot -->
             </div>
             <h1>Time flies!</h1>
             <p style="text-align: center; padding: 2rem 5rem; font-size: 2rem">
@@ -169,9 +162,10 @@
         </div>
 
         <template id="t-clock">
-            <div class="outer-circle" style="--radius: 4rem; --hour: 8; --minutes: 15" onclick="handleClockClick(this)">
-                <div class="long-pointer"></div>
-                <div class="short-pointer"></div>
+            <div class="outer-circle" style="--hour: 8; --minutes: 15" onclick="handleClockClick(this)">
+                <div class="minutes pointer"></div>
+                <div class="hours pointer"></div>
+                <div class="seconds pointer"></div>
             </div>
         </template>
 
@@ -271,11 +265,6 @@
             const STOP_SPEEDUP_AT_ROUND = 20;
             const SPEEDUP_STEP = 350;
 
-            /** @typedef {{
-             *      isPaused: boolean
-             *      trackAnimations: Animation[]
-             * }} GameState */
-
             /**
              * @typedef { "main-menu" | "difficulty" | "game" } Screen
              */
@@ -290,6 +279,8 @@
                     trackAnimations: [],
                 };
             }
+
+            /** @typedef {ReturnType<typeof getInitialGameState>} GameState */
 
             /** @type {GameState} */
             const GAME_STATE = getInitialGameState();
@@ -366,11 +357,15 @@
             let goalClocksCount = 0;
             let goneProperClocksCount = 0;
 
-            function instantiateClock(hour, minutes) {
+            function instantiateClock(hour, minutes, { seconds, className } = {}) {
                 const instance = instantiateTemplate("#t-clock");
                 const clock = instance.children[0];
                 clock.style.setProperty("--hour", hour);
                 clock.style.setProperty("--minutes", minutes);
+                if (seconds != undefined) {
+                    clock.style.setProperty("--seconds", seconds);
+                }
+                clock.classList.add(className);
                 return clock;
             }
 
@@ -530,7 +525,7 @@
                             const hour = Math.floor(Math.random() * 12) + 1;
                             const minutesIdx = Math.floor(Math.random() * MINUTES_EASY.length);
                             const minutes = MINUTES_EASY[minutesIdx];
-                            const clock = instantiateClock(hour, minutes);
+                            const clock = instantiateClock(hour, minutes, { className: "game-clock" });
                             tracks[idx].appendChild(clock);
 
                             // There's also possibility that a "goal clock" will be generated here.
@@ -546,7 +541,7 @@
                                 goalClocksCount++;
                             }
                         } else if (col === 2) {
-                            const clock = instantiateClock(ghour, gminutes);
+                            const clock = instantiateClock(ghour, gminutes, { className: "game-clock" });
                             tracks[idx].appendChild(clock);
                             clocksToCheckOffscreen.add(clock);
 
@@ -687,21 +682,57 @@
                 return round;
             }
 
-            addEventListener("keyup", (ev) => {
-                if (ev.key === "Escape") {
-                    togglePause(GAME_STATE);
-                }
-            });
+            function instantiateMenuClock() {
+                const date = new Date();
 
-            window.addEventListener("wheel", (event) => event.preventDefault(), {
-                passive: false,
-            });
+                const clock = instantiateClock(date.getHours() % 12, date.getMinutes(), {
+                    className: "menu-clock",
+                    seconds: 0,
+                });
 
-            window.addEventListener("keydown", (event) => {
-                if (["ArrowUp", "ArrowDown", " "].includes(event.key)) {
-                    event.preventDefault();
-                }
-            });
+                setInterval(() => {
+                    const seconds = Number(clock.style.getPropertyValue("--seconds"));
+                    clock.style.setProperty("--seconds", (seconds + 1) % 60);
+
+                    if (seconds == 59) {
+                        const minutes = Number(clock.style.getPropertyValue("--minutes"));
+                        clock.style.setProperty("--minutes", (minutes + 1) % 60);
+                        if (minutes == 59) {
+                            const hours = Number(clock.style.getPorpertyValue("--hours"));
+                            clock.style.setProperty("--hours", (hours + 1) % 12);
+                        }
+                    }
+                }, 1000);
+
+                getEl(".main-menu-screen .clock").appendChild(clock);
+            }
+
+            /**
+             * @param {GameState} gameState
+             */
+            function init(gameState) {
+                addEventListener("keyup", (ev) => {
+                    if (GAME_STATE.screen != "game") return;
+
+                    if (ev.key === "Escape") {
+                        togglePause(GAME_STATE);
+                    }
+                });
+
+                window.addEventListener("wheel", (event) => event.preventDefault(), {
+                    passive: false,
+                });
+
+                window.addEventListener("keydown", (event) => {
+                    if (["ArrowUp", "ArrowDown", " "].includes(event.key)) {
+                        event.preventDefault();
+                    }
+                });
+
+                instantiateMenuClock();
+            }
+
+            init(GAME_STATE);
         </script>
     </body>
 </html>
