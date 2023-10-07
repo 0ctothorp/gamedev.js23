@@ -17,6 +17,7 @@
         <title>Time flies!</title>
         <link rel="preload" href="./assets/digitaldream.ttf" as="font" type="font/ttf" crossorigin />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charset="utf-8" />
         <link rel="stylesheet" href="./css/reset.css" />
         <link rel="stylesheet" href="./css/clock.css" />
         <link rel="stylesheet" href="./css/styles.css" />
@@ -72,7 +73,7 @@
         <script src="./js/consts.js"></script>
     </head>
     <body>
-        <div class="screen main-menu-screen">
+        <div class="screen main-menu-screen active">
             <div class="clock" style="width: 25rem; height: 25rem; margin: 0 auto; margin-bottom: 4rem; --radius: 8rem">
                 <!-- clock slot -->
             </div>
@@ -84,40 +85,48 @@
             <button class="main-button" onclick="showDifficultyScreen()">Play</button>
         </div>
 
-        <div class="screen difficulty-screen" style="display: none">
+        <div class="screen difficulty-screen" data-chosen="normal">
             <h1>Choose difficulty</h1>
             <div class="infos">
-                <div data-difficulty="normal" class="difficulty-info" style="display: none">
+                <div data-difficulty="normal" class="difficulty-info">
                     Just normal mode. Clicking wrong clocks won't cause you trouble.
                 </div>
-                <div data-difficulty="hard" class="difficulty-info" style="display: none">
+                <div data-difficulty="hard" class="difficulty-info">
                     Stay alert - clicking on wrong clocks will cause you trouble.
                 </div>
             </div>
 
-            <button
-                data-difficulty="normal"
-                class="main-button"
-                onclick="play({ cfg: DIFFICULTY_CONFIGS.NORMAL })"
-                onmouseenter="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseEnter(this)"
-                onmouseleave="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseLeave(this)"
-            >
-                Normal
-            </button>
-            <button
-                data-difficulty="hard"
-                class="main-button"
-                onclick="play({ cfg: DIFFICULTY_CONFIGS.HARD })"
-                onmouseenter="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseEnter(this)"
-                onmouseleave="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultyButtonMouseLeave(this)"
-            >
-                Hard
-            </button>
+            <div style="display: flex; flex-direction: column; gap: 1rem; margin: 0 auto">
+                <button
+                    data-difficulty="normal"
+                    class="main-button button-with-icon"
+                    onclick="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultySelect(this)"
+                >
+                    Normal
+                </button>
+                <button
+                    data-difficulty="hard"
+                    class="main-button button-with-icon"
+                    onclick="DIFFICULTY_SCREEN_EVENT_HANDLERS.onDifficultySelect(this)"
+                >
+                    Hard
+                </button>
+            </div>
 
-            <button class="secondary-button" onclick="showScreen('main-menu')"><- Back</button>
+            <button
+                class="main-button button-with-icon"
+                onclick="DIFFICULTY_SCREEN_EVENT_HANDLERS.onPlay(this)"
+                style="background: var(--persian-green-lighter); margin-top: 2rem"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 20 20">
+                    <path fill="#274754" d="m4 4l12 6l-12 6z" />
+                </svg>
+                Play
+            </button>
+            <button class="secondary-button button-with-icon" onclick="showScreen('main-menu')"><- Back</button>
         </div>
 
-        <div class="screen game-screen" style="display: none">
+        <div class="screen game-screen">
             <div class="top-bar">
                 <div class="hp"></div>
                 <div class="time">3:15</div>
@@ -161,60 +170,8 @@
             </div>
         </div>
 
-        <template id="t-clock">
-            <div class="outer-circle" style="--hour: 8; --minutes: 15" onclick="handleClockClick(this)">
-                <div class="minutes pointer"></div>
-                <div class="hours pointer"></div>
-                <div class="seconds pointer"></div>
-            </div>
-        </template>
-
-        <template id="t-tracks">
-            <div class="row">
-                <div class="track"></div>
-            </div>
-            <div class="row">
-                <div class="track"></div>
-            </div>
-            <div class="row">
-                <div class="track"></div>
-            </div>
-            <div class="row">
-                <div class="track"></div>
-            </div>
-            <div class="row">
-                <div class="track"></div>
-            </div>
-            <div class="row">
-                <div class="track"></div>
-            </div>
-        </template>
-
-        <template id="t-heart">
-            <svg
-                version="1.1"
-                xmlns="http://www.w3.org/2000/svg"
-                xmlns:xlink="http://www.w3.org/1999/xlink"
-                x="0px"
-                y="0px"
-                width="1.75em"
-                height="1.75em"
-                viewBox="0 0 640 480"
-                xml:space="preserve"
-            >
-                <path
-                    fill="var(--burnt-sienna)"
-                    fill-rule="evenodd"
-                    stroke-width="10%"
-                    stroke="var(--burnt-sienna-darker)"
-                    stroke-linejoin="round"
-                    d="m212.88298,23.34021c-137.447098,-2.471161 -264.63855,212.481247 105.925735,435.340698c0.406281,-0.73114 1.968781,-0.73114 2.375031,0c382.517975,-230.048691 234.665131,-451.640178 92.625702,-434.390638c-55.372711,6.724489 -81.503326,37.45645 -93.813263,63.887968c-12.309845,-26.431519 -38.440552,-57.163479 -93.81308,-63.887968c-4.438782,-0.53927 -8.866302,-0.87019 -13.300125,-0.95006z"
-                />
-            </svg>
-        </template>
-
         <script type="module">
-            import { randomInt, instantiateTemplate, qs, playAudio, getEl, getEls } from "./js/utils.mjs";
+            import { randomInt, instantiateTemplate, qs, playAudio, $, $$, showEl, hideEl } from "./js/utils.mjs";
 
             const yaySfx = new Audio("./assets/yay.wav");
             const wrongSfx = new Audio("./assets/wrong.mp3");
@@ -230,24 +187,43 @@
             const gameScreen = qs(".game-screen");
             const difficultyScreen = qs(".difficulty-screen");
 
-            // setup event handlers for difficulty screen
-            function setupDifficultyScreen() {
-                const descriptions = getEls(".difficulty-info[data-difficulty]");
+            const DIFFICULTY_LEVELS = ["normal", "hard"];
 
-                function getDescriptionElFor(difficulty) {
-                    return getEl(`.difficulty-info[data-difficulty="${difficulty}"]`);
+            function getDescriptionElFor(difficulty) {
+                return $(`.difficulty-info[data-difficulty="${difficulty}"]`);
+            }
+
+            function addDifficultyScreenStyles() {
+                const exists = $("style#difficulty-screen");
+                if (exists) {
+                    return;
                 }
 
+                const s = document.createElement("style");
+                s.id = "difficulty-screen";
+                let difficultyScreenStyles = "";
+                for (const d of DIFFICULTY_LEVELS) {
+                    difficultyScreenStyles += `[data-chosen="${d}"] button[data-difficulty="${d}"]::before {content: "✅"}\n`;
+                    difficultyScreenStyles += `[data-chosen="${d}"] .difficulty-info[data-difficulty="${d}"] { display: block; }\n`;
+                }
+                s.textContent = difficultyScreenStyles;
+                document.head.appendChild(s);
+            }
+
+            // setup event handlers for difficulty screen
+            function setupDifficultyScreen() {
+                addDifficultyScreenStyles();
+
+                const descriptions = $$(".difficulty-info[data-difficulty]");
+
                 window.DIFFICULTY_SCREEN_EVENT_HANDLERS = {
-                    onDifficultyButtonMouseEnter: (btn) => {
-                        const difficulty = btn.dataset.difficulty;
-                        descriptions.forEach((x) => (x.style.display = "none"));
-                        const descriptionEl = getDescriptionElFor(difficulty);
-                        descriptionEl.style.display = null;
+                    onDifficultySelect: (btn) => {
+                        $(".difficulty-screen").dataset.chosen = btn.dataset.difficulty;
                     },
-                    onDifficultyButtonMouseLeave: (btn) => {
-                        const difficulty = btn.dataset.difficulty;
-                        descriptions.forEach((x) => (x.style.display = "none"));
+                    onPlay: (btn) => {
+                        const difficulty = btn.closest("[data-chosen]").dataset.chosen;
+                        const cfg = DIFFICULTY_CONFIGS[difficulty.toUpperCase()];
+                        play({ cfg });
                     },
                 };
             }
@@ -308,10 +284,10 @@
                 if (gameState.screen !== "game") return;
                 if (gameState.isPaused) {
                     unPause(gameState);
-                    getEl("#pause-popup").style.display = "none";
+                    $("#pause-popup").style.display = "none";
                 } else {
                     pause(gameState);
-                    getEl("#pause-popup").style.display = null;
+                    $("#pause-popup").style.display = null;
                 }
             }
 
@@ -323,18 +299,22 @@
              */
             function changeScreen(gameState, screen) {
                 gameState.screen = screen;
-                const screens = getEls(".screen");
-                for (const s of screens) s.style.display = "none";
-                getEl(`.${screen}-screen`).style.display = null;
+                const screens = $$(".screen");
+
+                for (const s of screens) {
+                    s.classList.remove("active");
+                }
+
+                $(`.${screen}-screen`).classList.add("active");
             }
 
             window.showScreen = (name) => changeScreen(GAME_STATE, name);
             window.backToMenu = () => {
                 changeScreen(GAME_STATE, "main-menu");
                 // simple way of stopping the game
-                getEl(".tracks").innerHTML = "";
+                $(".tracks").innerHTML = "";
                 // some popups might need some internal elements to hide also
-                getEls(".popup").forEach((x) => (x.style.display = "none"));
+                $$(".popup").forEach((x) => (x.style.display = "none"));
             };
 
             function getTrackAnimationDuration(round) {
@@ -380,15 +360,15 @@
             }
 
             function closeYouLost() {
-                getEl("#highscore").style.display = "none";
+                $("#highscore").style.display = "none";
                 looserElement.style.display = "none";
             }
 
             function showYouLost(points) {
                 looserElement.style.display = null;
 
-                getEl("#round-number").innerHTML = round;
-                getEl("#score").innerHTML = points;
+                $("#round-number").innerHTML = round;
+                $("#score").innerHTML = points;
 
                 const lsKey = LS_KEYS[`HS_${window.currentDifficultyCfg.name}`.toUpperCase()];
 
@@ -396,8 +376,8 @@
                 if (prevhs === null) {
                     localStorage.setItem(lsKey, points);
                 } else if (prevhs < points) {
-                    getEl("#prev-hs").innerHTML = prevhs;
-                    getEl("#highscore").style.display = null;
+                    $("#prev-hs").innerHTML = prevhs;
+                    $("#highscore").style.display = null;
                     localStorage.setItem(lsKey, points);
                 }
             }
@@ -545,7 +525,7 @@
                             tracks[idx].appendChild(clock);
                             clocksToCheckOffscreen.add(clock);
 
-                            // I had problems with observer, so I went with the setInterval method :/
+                            // I had problems with observer, so I went with the setInterval method
                             const intervId = setInterval(() => {
                                 if (isOutOfScreen(clock)) {
                                     onClockGoneOffScreen(intervId);
@@ -704,7 +684,7 @@
                     }
                 }, 1000);
 
-                getEl(".main-menu-screen .clock").appendChild(clock);
+                $(".main-menu-screen .clock").appendChild(clock);
             }
 
             /**
@@ -735,4 +715,56 @@
             init(GAME_STATE);
         </script>
     </body>
+
+    <template id="t-clock">
+        <div class="outer-circle" style="--hour: 8; --minutes: 15" onclick="handleClockClick(this)">
+            <div class="minutes pointer"></div>
+            <div class="hours pointer"></div>
+            <div class="seconds pointer"></div>
+        </div>
+    </template>
+
+    <template id="t-tracks">
+        <div class="row">
+            <div class="track"></div>
+        </div>
+        <div class="row">
+            <div class="track"></div>
+        </div>
+        <div class="row">
+            <div class="track"></div>
+        </div>
+        <div class="row">
+            <div class="track"></div>
+        </div>
+        <div class="row">
+            <div class="track"></div>
+        </div>
+        <div class="row">
+            <div class="track"></div>
+        </div>
+    </template>
+
+    <template id="t-heart">
+        <svg
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            width="1.75em"
+            height="1.75em"
+            viewBox="0 0 640 480"
+            xml:space="preserve"
+        >
+            <path
+                fill="var(--burnt-sienna)"
+                fill-rule="evenodd"
+                stroke-width="10%"
+                stroke="var(--burnt-sienna-darker)"
+                stroke-linejoin="round"
+                d="m212.88298,23.34021c-137.447098,-2.471161 -264.63855,212.481247 105.925735,435.340698c0.406281,-0.73114 1.968781,-0.73114 2.375031,0c382.517975,-230.048691 234.665131,-451.640178 92.625702,-434.390638c-55.372711,6.724489 -81.503326,37.45645 -93.813263,63.887968c-12.309845,-26.431519 -38.440552,-57.163479 -93.81308,-63.887968c-4.438782,-0.53927 -8.866302,-0.87019 -13.300125,-0.95006z"
+            />
+        </svg>
+    </template>
 </html>

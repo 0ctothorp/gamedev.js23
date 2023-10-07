@@ -127,33 +127,38 @@
 
 .screen {
     height: 100vh;
+    display: none;
+}
+
+.screen.active {
+    display: flex;
 }
 
 .game-screen {
-    display: flex;
     flex-direction: column;
 }
 
 .main-menu-screen {
-    display: flex;
     flex-direction: column;
     justify-content: center;
 }
 
 .difficulty-screen {
-    display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 1rem;
+    display: none;
 }
 
-.difficulty-info[data-difficulty] {
+.difficulty-info {
+    display: none;
     position: absolute;
     top: 0;
     left: 0;
     overflow-y: auto;
     padding: 1rem;
 }
+
 
 .difficulty-screen .infos {
     position: relative;
@@ -164,6 +169,22 @@
     font-size: 2rem;
     height: 10rem;
     overflow: hidden;
+}
+
+
+button[data-difficulty]::before {
+    content: "⬜";
+    margin-right: 0.5rem;
+}
+
+button[data-difficulty] {
+    width: 100%;
+}
+
+.button-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 h1 {

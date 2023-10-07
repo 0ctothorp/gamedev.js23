@@ -18,7 +18,7 @@ export const playAudio = (audio) => {
 /** Map<queryString, DOMNode> */
 const DOM_NODES = new Map();
 
-export function getEl(selector, multiple = false) {
+export function $(selector, multiple = false) {
     const hasCached = DOM_NODES.has(selector);
     if (!hasCached) {
         const el = multiple ? qsa(selector) : qs(selector);
@@ -27,4 +27,7 @@ export function getEl(selector, multiple = false) {
     return DOM_NODES.get(selector);
 }
 
-export const getEls = (selector) => getEl(selector, true);
+export const $$ = (selector) => $(selector, true);
+
+export const showEl = (el) => el.classList.add("active");
+export const hideEl = (el) => el.classList.remove("active");
