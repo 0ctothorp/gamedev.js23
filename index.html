@@ -146,7 +146,7 @@
             <div class="tracks-wrapper">
                 <div class="tracks"></div>
             </div>
-            <span class="round-no">Round 1</span>
+            <span class="round-announcement">Round 1</span>
         </div>
 
         <div id="looser-popup" class="popup" style="display: none">
@@ -169,23 +169,24 @@
                 <button class="secondary-button" onclick="togglePause()">Close</button>
             </div>
         </div>
+        zaczyna
 
         <script type="module">
-            import { randomInt, instantiateTemplate, qs, playAudio, $, $$, showEl, hideEl } from "./js/utils.mjs";
+            import { randomInt, instantiateTemplate, playAudio, $, $$, showEl, hideEl } from "./js/utils.mjs";
 
             const yaySfx = new Audio("./assets/yay.wav");
             const wrongSfx = new Audio("./assets/wrong.mp3");
             const oofSfx = new Audio("./assets/oof.wav");
 
-            const hpElement = qs(".hp");
-            const pointsElement = qs(".points .value");
-            const looserElement = qs("#looser-popup");
-            const rowsWrapper = qs(".tracks");
-            const time = qs(".time");
+            const hpElement = $(".hp");
+            const pointsElement = $(".points .value");
+            const looserElement = $("#looser-popup");
+            const rowsWrapper = $(".tracks");
+            const time = $(".time");
 
-            const mainMenu = qs(".main-menu-screen");
-            const gameScreen = qs(".game-screen");
-            const difficultyScreen = qs(".difficulty-screen");
+            const mainMenu = $(".main-menu-screen");
+            const gameScreen = $(".game-screen");
+            const difficultyScreen = $(".difficulty-screen");
 
             const DIFFICULTY_LEVELS = ["normal", "hard"];
 
@@ -222,8 +223,10 @@
                     },
                     onPlay: (btn) => {
                         const difficulty = btn.closest("[data-chosen]").dataset.chosen;
-                        const cfg = DIFFICULTY_CONFIGS[difficulty.toUpperCase()];
-                        play({ cfg });
+                        window.currentDifficultyCfg = DIFFICULTY_CONFIGS[difficulty.toUpperCase()];
+                        console.log(window.currentDifficultyCfg);
+                        nextRound();
+                        // play({ cfg });
                     },
                 };
             }
@@ -449,9 +452,7 @@
                     .map(() => Array(trackLength).fill(0));
 
                 const clocksPerColumn = getClocksPerColumn(round);
-                // debug
-                // console.group("clocks per column");
-                // console.log("clocksPerColumn", clocksPerColumn);
+
                 // Losuję dla każdej kolumny, w którym wierszu (i w ilu) ma się znaleźć zegarek.
                 // Czyli dla każdej kolumny co najwyżej jeden wiersz będzie miał zegarek
                 const clockCellsSet = new Set();
@@ -466,7 +467,6 @@
                         clockCellsSet.add(`${row},${i}`);
                     }
                 }
-                // console.groupEnd("clocks per column");
 
                 // omg
                 let goalCells = new Set(clockCellsSet);
@@ -496,6 +496,7 @@
                     }
                 }
 
+                // clocks with goal time that need to be checked if they made it through the entire screen
                 const clocksToCheckOffscreen = new Set();
 
                 goalClocksCount = goalCells.size;
@@ -553,7 +554,6 @@
                         return [];
                     })(round);
 
-                    // console.group("tracks durations");
                     for (let i = 0; i < tracks.length; i++) {
                         const track = tracks[i];
 
@@ -577,9 +577,6 @@
                         const trackAnimation = [{ transform: initialTranslate }, { transform: goalTranslate }];
                         const duration = getTrackAnimationDuration(round);
 
-                        // debug
-                        // console.log(`track ${i} duration: ${duration}`);
-
                         const options = {
                             duration,
                             iterations: 1,
@@ -589,7 +586,6 @@
                         const animation = track.animate(trackAnimation, options);
                         GAME_STATE.trackAnimations.push(animation);
                     }
-                    // console.groupEnd("track durations");
                 }
 
                 setupTracks(round);
@@ -614,9 +610,8 @@
                             { once: true }
                         );
 
-                        // console.log({ cfg, punishOnMistake });
-
                         if (punishOnMistake) {
+                            console.log("wtf");
                             hp = decreaseHP(hp, points, tracks);
                         }
                     }
@@ -648,14 +643,25 @@
                 play({ cfg });
             };
 
-            function nextRound(carriedPoints, round) {
-                const r = document.querySelector(".round-no");
+            function nextRound(carriedPoints = 0, roundNumber = 0) {
+                const element = $(".round-announcement");
+                let round = roundNumber;
                 round += 1;
-                r.innerHTML = `Round ${round}`;
-                r.classList.add("op1");
+                element.innerHTML = `Round ${round}`;
+                element.classList.add("op1");
                 setTimeout(() => {
-                    r.classList.remove("op1");
+                    element.classList.remove("op1");
                 }, 1000);
+
+                // Trigger time announcement animation.
+                // Remove previously set class and immediately add it again in a next "tick".
+                // Removing and setting in the same "tick" won't retrigger the animation.
+                // TODO: The animation is not perfect, but is good enough for now. To animate exactly from the center of the screen
+                // to the position of .time I'd need to use another absolutely positioned element.
+                $(".time").classList.add("announce");
+                setTimeout(() => {
+                    $(".time").classList.remove("announce");
+                }, 2700);
 
                 play({ carriedPoints, cfg: window.currentDifficultyCfg });
 
