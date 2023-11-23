@@ -169,10 +169,10 @@
                 <button class="secondary-button" onclick="togglePause()">Close</button>
             </div>
         </div>
-        zaczyna
 
         <script type="module">
             import { randomInt, instantiateTemplate, playAudio, $, $$, showEl, hideEl } from "./js/utils.mjs";
+            import { instantiateClock } from './js/core.mjs';
 
             const yaySfx = new Audio("./assets/yay.wav");
             const wrongSfx = new Audio("./assets/wrong.mp3");
@@ -340,18 +340,6 @@
             let goalClocksCount = 0;
             let goneProperClocksCount = 0;
 
-            function instantiateClock(hour, minutes, { seconds, className } = {}) {
-                const instance = instantiateTemplate("#t-clock");
-                const clock = instance.children[0];
-                clock.style.setProperty("--hour", hour);
-                clock.style.setProperty("--minutes", minutes);
-                if (seconds != undefined) {
-                    clock.style.setProperty("--seconds", seconds);
-                }
-                clock.classList.add(className);
-                return clock;
-            }
-
             function fillHpElement(hp) {
                 const instance = instantiateTemplate("#t-heart");
                 const elements = [instance];
@@ -434,7 +422,7 @@
             /**
              * @param { { punishOnMistake: boolean } } cfg
              */
-            function startRound(trackLength, goal, carriedPoints = 0, cfg) {
+            function startRound(roundNum, trackLength, goal, carriedPoints = 0, cfg) {
                 const { punishOnMistake } = cfg;
 
                 goalClocksCount = 0;
@@ -502,11 +490,16 @@
                 goalClocksCount = goalCells.size;
                 matrixRows.forEach((row, idx) => {
                     for (const col of row) {
+                        let clockClassName = 'game-clock';
+                        if(roundNum >= cfg.vertWobbleStartAt && Math.random() < 0.3) {
+                            clockClassName += ' wobble';
+                        }
+
                         if (col === 1) {
                             const hour = Math.floor(Math.random() * 12) + 1;
                             const minutesIdx = Math.floor(Math.random() * MINUTES_EASY.length);
                             const minutes = MINUTES_EASY[minutesIdx];
-                            const clock = instantiateClock(hour, minutes, { className: "game-clock" });
+                            const clock = instantiateClock(hour, minutes, { className: clockClassName });
                             tracks[idx].appendChild(clock);
 
                             // There's also possibility that a "goal clock" will be generated here.
@@ -522,7 +515,7 @@
                                 goalClocksCount++;
                             }
                         } else if (col === 2) {
-                            const clock = instantiateClock(ghour, gminutes, { className: "game-clock" });
+                            const clock = instantiateClock(ghour, gminutes, { className: clockClassName });
                             tracks[idx].appendChild(clock);
                             clocksToCheckOffscreen.add(clock);
 
@@ -631,7 +624,7 @@
 
                 const hour = randomInt(12) + 1;
                 const minutes = MINUTES_EASY[randomInt(4)];
-                startRound(20, { hour, minutes }, carriedPoints, cfg);
+                startRound(round, 20, { hour, minutes }, carriedPoints, cfg);
             };
 
             window.tryAgain = function tryAgain(cfg) {
