@@ -2,7 +2,7 @@ const DIFFICULTY_CONFIGS = {
     NORMAL: {
         name: "normal",
         punishOnMistake: false,
-        vertWobbleStartAt: 5
+        vertWobbleStartAt: 2
     },
     HARD: {
         name: "hard",
