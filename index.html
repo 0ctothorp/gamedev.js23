@@ -252,6 +252,11 @@
                     isPaused: false,
                     /** @type {Animation[]} */
                     trackAnimations: [],
+                    /**
+                     * How many wrong clicks were made in a row. After reaching value of 2, the player should be punished with -1 HP
+                     * and the counter should be reset to 0.
+                     */
+                    failsInARow: 0,
                 };
             }
 
@@ -442,8 +447,7 @@
                 const clockCellsSet = new Set();
                 for (let i = 0; i < trackLength; i++) {
                     const count = randomInt(clocksPerColumn) + 1; // [0..1] + 1 => [1..2]
-                    // debug
-                    // console.log("count", count);
+
                     for (let j = 0; j < count; j++) {
                         // W teorii możemy count razy wylosować ten sam row.
                         const row = randomInt(TRACKS_NUM);
@@ -452,7 +456,6 @@
                     }
                 }
 
-                // omg
                 let goalCells = new Set(clockCellsSet);
                 for (let i = goalCells.size; i > 3; i--) {
                     goalCells.delete([...goalCells.values()][randomInt(goalCells.size)]);
@@ -588,6 +591,7 @@
                         instance.style.visibility = "hidden";
                         instance.style.pointerEvents = "none";
                         instance.dataset.disabled = true;
+                        GAME_STATE.failsInARow = 0;
                     } else {
                         playAudio(wrongSfx);
                         instance.style.setProperty("--hover-shadow-color", "red");
@@ -598,10 +602,19 @@
                             },
                             { once: true }
                         );
+                        GAME_STATE.failsInARow += 1;
 
                         if (punishOnMistake) {
-                            console.log("wtf");
                             hp = decreaseHP(hp, points, tracks);
+                        } else if (GAME_STATE.failsInARow == 2) {
+                            /**
+                             * On normal mode the player will be punished after doing 2 wrong clicks in a row.
+                             * Otherwise, normal mode doesn't make sense, since you can just click every clock and you will eventually
+                             * find the correct ones and advance to the next level.
+                             */
+                            // TODO: move tracks and points and hp to game state
+                            hp = decreaseHP(hp, points, tracks);
+                            GAME_STATE.failsInARow = 0;
                         }
                     }
                 };
