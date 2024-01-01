@@ -41,9 +41,9 @@
     animation: wobble 2s ease-in-out infinite;
 }
 
-/* TODO: it stops for a moment on every keyframe. the movement is not continuous. */
 @keyframes wobble {
-    0%, 100% {
+    0%,
+    100% {
         transform: translateY(-15%);
     }
     50% {

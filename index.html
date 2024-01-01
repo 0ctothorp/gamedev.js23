@@ -21,55 +21,6 @@
         <link rel="stylesheet" href="./css/reset.css" />
         <link rel="stylesheet" href="./css/clock.css" />
         <link rel="stylesheet" href="./css/styles.css" />
-        <style>
-            @font-face {
-                font-family: "Digital Dream";
-                src: url("./assets/digitaldream.ttf");
-                font-display: block;
-            }
-
-            html,
-            body {
-                overflow: hidden;
-                font-family: Verdana, Geneva, Tahoma, sans-serif;
-                background-color: var(--saffron);
-                color: var(--charcoal);
-            }
-
-            :root {
-                --default-radius: 5rem;
-                --default-diameter: calc(var(--default-radius) * 2);
-                --clock-margin: 0 5rem;
-
-                /* colors */
-                /* palette link: https://coolors.co/palette/264653-2a9d8f-e9c46a-f4a261-e76f51 */
-                --charcoal: hsla(197, 37%, 24%, 1);
-                --persian-green: hsla(173, 58%, 39%, 1);
-                --persian-green-lighter: hsla(173, 58%, 59%, 1);
-                --saffron: hsla(43, 74%, 66%, 1);
-                --sandy-brown: hsla(27, 87%, 67%, 1);
-                --burnt-sienna: hsla(12, 76%, 61%, 1);
-                --burnt-sienna-darker: hsla(12, 76%, 41%, 1);
-
-                font-size: 12px;
-            }
-
-            @media (max-width: 1128px) {
-                :root {
-                    font-size: 9px;
-                }
-            }
-
-            @media (max-width: 938px) {
-                :root {
-                    font-size: 7.5px;
-                }
-            }
-
-            * {
-                box-sizing: border-box;
-            }
-        </style>
         <script src="./js/consts.js"></script>
     </head>
     <body>
@@ -169,7 +120,8 @@
         </div>
 
         <script type="module">
-            import { randomInt, instantiateTemplate, playAudio, $, $$, showEl, hideEl } from "./js/utils.mjs";
+            import { randomInt } from "./js/math.mjs";
+            import { instantiateTemplate, playAudio, $, $$, showEl, hideEl } from "./js/utils.mjs";
             import { instantiateClock } from "./js/core.mjs";
 
             const yaySfx = new Audio("./assets/yay.wav");

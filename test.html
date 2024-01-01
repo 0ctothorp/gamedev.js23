@@ -8,227 +8,119 @@
         <link rel="stylesheet" href="./css/reset.css" />
         <link rel="stylesheet" href="./css/clock.css" />
         <link rel="stylesheet" href="./css/styles.css" />
-        <style>
-            @font-face {
-                font-family: "Digital Dream";
-                src: url("./assets/digitaldream.ttf");
-                font-display: block;
-            }
-
-            html,
-            body {
-                overflow: hidden;
-                font-family: Verdana, Geneva, Tahoma, sans-serif;
-                background-color: var(--saffron);
-                color: var(--charcoal);
-            }
-
-            :root {
-                --default-radius: 5rem;
-                --default-diameter: calc(var(--default-radius) * 2);
-                --clock-margin: 0 5rem;
-
-                /* colors */
-                /* palette link: https://coolors.co/palette/264653-2a9d8f-e9c46a-f4a261-e76f51 */
-                --charcoal: hsla(197, 37%, 24%, 1);
-                --persian-green: hsla(173, 58%, 39%, 1);
-                --persian-green-lighter: hsla(173, 58%, 59%, 1);
-                --saffron: hsla(43, 74%, 66%, 1);
-                --sandy-brown: hsla(27, 87%, 67%, 1);
-                --burnt-sienna: hsla(12, 76%, 61%, 1);
-                --burnt-sienna-darker: hsla(12, 76%, 41%, 1);
-
-                font-size: 12px;
-            }
-
-            @media (max-width: 1128px) {
-                :root {
-                    font-size: 9px;
-                }
-            }
-
-            @media (max-width: 938px) {
-                :root {
-                    font-size: 7.5px;
-                }
-            }
-
-            * {
-                box-sizing: border-box;
-            }
-        </style>
         <script src="./js/consts.js"></script>
     </head>
 
     <body>
-        <div id="clock-test"></div>
+        <div id="clock-test" style="display: flex; align-items: center; justify-content: center; padding: 2rem 0"></div>
 
         <script type="module">
-            import { randomInt, instantiateTemplate, playAudio, $, $$, showEl, hideEl } from "./js/utils.mjs";
+            import { $, getCssProperty } from "./js/utils.mjs";
+            import { rad2Deg, normalize, vAngleBetween } from "./js/math.mjs";
             import { instantiateClock } from "./js/core.mjs";
-
-            const hpElement = $(".hp");
-            const pointsElement = $(".points .value");
-            const looserElement = $("#looser-popup");
-            const rowsWrapper = $(".tracks");
-            const time = $(".time");
-
-            const MINUTES_EASY = [0, 15, 30, 45];
-
-            const BASE_TRACK_ANIMATION_TIME = 33000;
-            const STOP_SPEEDUP_AT_ROUND = 20;
-            const SPEEDUP_STEP = 350;
-
-            /**
-             * @typedef { "main-menu" | "difficulty" | "game" } Screen
-             */
-
-            function getInitialGameState() {
-                // TODO: move the rest of the fragmented state inside here
-                return {
-                    /** @type {Screen} */
-                    screen: "main-menu",
-                    isPaused: false,
-                    /** @type {Animation[]} */
-                    trackAnimations: [],
-                };
-            }
-
-            /** @typedef {ReturnType<typeof getInitialGameState>} GameState */
-
-            /** @type {GameState} */
-            const GAME_STATE = getInitialGameState();
-
-            /** @param {GameState} gameState */
-            function pause(gameState) {
-                if (gameState.screen !== "game") return;
-                gameState.isPaused = true;
-                for (const anim of gameState.trackAnimations) {
-                    anim.pause();
-                }
-            }
-
-            /** @param {GameState} gameState */
-            function unPause(gameState) {
-                if (gameState.screen !== "game") return;
-                gameState.isPaused = false;
-                for (const anim of gameState.trackAnimations) {
-                    anim.play();
-                }
-            }
-
-            /** @param {GameState} gameState */
-            function togglePause(gameState) {
-                if (gameState.screen !== "game") return;
-                if (gameState.isPaused) {
-                    unPause(gameState);
-                    $("#pause-popup").style.display = "none";
-                } else {
-                    pause(gameState);
-                    $("#pause-popup").style.display = null;
-                }
-            }
-
-            window.togglePause = () => togglePause(GAME_STATE);
-
-            function getTrackAnimationDuration(round) {
-                const base = BASE_TRACK_ANIMATION_TIME - SPEEDUP_STEP * Math.min(round, STOP_SPEEDUP_AT_ROUND);
-                return base + randomInt(5000) - 2500; // +/- 2500
-            }
-
-            const BASE_MAX_CLOCKS_PER_COLUMN = 1;
-            const MAX_CLOCKS_PER_COLUMN_STEP = 0.2;
-            const AT_MOST_CLOCKS_PER_COLUMN = 3;
-
-            function getClocksPerColumn(round) {
-                return Math.min(
-                    AT_MOST_CLOCKS_PER_COLUMN,
-                    Math.floor(BASE_MAX_CLOCKS_PER_COLUMN + MAX_CLOCKS_PER_COLUMN_STEP * round)
-                );
-            }
-
-            let round = 1;
-            let goalClocksCount = 0;
-            let goneProperClocksCount = 0;
-
-            function resetTracks(tracks) {
-                tracks.forEach((t) => (t.innerHTML = ""));
-            }
-
-            function reinstantiateTracks() {
-                rowsWrapper.innerHTML = "";
-                const newTracksInstance = instantiateTemplate("#t-tracks");
-                rowsWrapper.append(...newTracksInstance.children);
-            }
-
-            function decreaseHP(hp, points, tracks) {
-                playAudio(oofSfx);
-                hp--;
-                fillHpElement(hp);
-                if (hp === 0) {
-                    showYouLost(points);
-                    resetTracks(tracks);
-                }
-                return hp;
-            }
-
-            function increasePoints(points) {
-                playAudio(yaySfx);
-                points++;
-                goneProperClocksCount++;
-                pointsElement.innerHTML = points;
-
-                if (goneProperClocksCount == goalClocksCount) {
-                    setTimeout(() => {
-                        round = nextRound(points, round);
-                    });
-                }
-
-                return points;
-            }
-
-            function isOutOfScreen(clock) {
-                if (clock.dataset.disabled) return false;
-
-                const bounds = clock.getBoundingClientRect();
-                return (
-                    (clock.dataset.reverse && bounds.left > window.innerWidth) ||
-                    (!clock.dataset.reverse && bounds.right < 0)
-                );
-            }
-
-            function instantiateMenuClock() {
-                const date = new Date();
-
-                const clock = instantiateClock(date.getHours() % 12, date.getMinutes(), {
-                    className: "menu-clock",
-                    seconds: 0,
-                });
-
-                setInterval(() => {
-                    const seconds = Number(clock.style.getPropertyValue("--seconds"));
-                    clock.style.setProperty("--seconds", (seconds + 1) % 60);
-
-                    if (seconds == 59) {
-                        const minutes = Number(clock.style.getPropertyValue("--minutes"));
-                        clock.style.setProperty("--minutes", (minutes + 1) % 60);
-                        if (minutes == 59) {
-                            const hours = Number(clock.style.getPorpertyValue("--hours"));
-                            clock.style.setProperty("--hours", (hours + 1) % 12);
-                        }
-                    }
-                }, 1000);
-
-                $(".main-menu-screen .clock").appendChild(clock);
-            }
 
             const c = instantiateClock(undefined, undefined, { className: "game-clock" });
             $("#clock-test").append(c);
+
+            const hoursPointer = $(".pointer.hours");
+
+            hoursPointer.addEventListener("mousedown", () => {
+                c.dataset.setting = "hours";
+            });
+
+            document.addEventListener("mouseup", () => {
+                if (c.dataset.setting) {
+                    delete c.dataset.setting;
+                }
+            });
+
+            const getHours = getCssProperty("hour");
+
+            const center = (() => {
+                const { x, y, width, height } = c.getBoundingClientRect();
+                return {
+                    x: x + width / 2,
+                    y: y + height / 2,
+                };
+            })();
+
+            // const origin = $("#origin-point");
+            // origin.style.top = center.y + "px";
+            // origin.style.left = center.x + "px";
+            // origin.dataset.set = true;
+
+            // const rectel = $("#rect");
+
+            // Mam obecny kąt, Mam punkt środkowy, mam punkt w którym znajduje się myszka.
+            // To chyba wszystko czego potzebuję. Chcę wyliczyć kąt między prostą przechodzącą
+            // przez C (center) i przez M (myszka), a prostą idącą wzdłuż wektora UP i porównać ten kąt
+            // z kątem obecnym.
+
+            window.addEventListener("mousemove", (event) => {
+                if (!c.dataset.setting) return;
+
+                // const pointerPoints = (() => {
+                //     // const rect = hoursPointer.getBoundingClientRect();
+                //     // rectel.style.left = rect.x + "px";
+                //     // rectel.style.top = rect.y + "px";
+                //     // const width = rect.right - rect.x;
+                //     // rectel.style.width = width + "px";
+                //     // rectel.style.height = rect.bottom - rect.y + "px";
+
+                //     // Create a vector from center at the currentAngle angle and make the origin a
+                //     // point along that vector at hours pointer length from the center.
+
+                //     return {
+                //         origin: {
+                //             x: rect.right - width / 2,
+                //             y: rect.bottom,
+                //         },
+                //         end: {
+                //             x: rect.x + width / 2,
+                //             y: rect.y,
+                //         },
+                //     };
+                // })();
+
+                // const originPoint = pointerPoints.origin;
+                // if (!origin.dataset.set) {
+                //     origin.style.top = originPoint.y + "px";
+                //     origin.style.left = originPoint.x + "px";
+                //     origin.dataset.set = true;
+                // }
+
+                const M = event;
+                const C = center;
+                const U = { x: center.x, y: center.y - 10 };
+                const vCM = { x: M.x - C.x, y: M.y - C.y };
+                const vCU = { x: U.x - C.x, y: U.y - C.y };
+                const scalar = vCM.x * vCU.x + vCM.y * vCU.y;
+                const lenCM = Math.sqrt(vCM.x ** 2 + vCM.y ** 2);
+                const lenCU = Math.sqrt(vCU.x ** 2 + vCU.y ** 2);
+                let angle = (Math.acos(scalar / (lenCM * lenCU)) * 180) / Math.PI;
+                // poprawianie kąta tak, żeby zawsze był od 0 do 360, bo normalnie w js jest do max 180 i nie
+                // ma kąta ujemnego, więc nie miałem rozróżnienia po której stronie okręgu znajduje się kursor.
+                if (M.x < C.x) angle = Math.abs(angle - 360);
+
+                const currentHours = getHours(c);
+                const currentAngle = currentHours * DEGREES_IN_HOUR;
+                console.log(angle, currentAngle);
+
+                c.style.setProperty(
+                    "--hour",
+                    angle > currentAngle ? Math.floor(angle / DEGREES_IN_HOUR) : Math.ceil(angle / DEGREES_IN_HOUR)
+                );
+            });
         </script>
+        <div
+            id="origin-point"
+            style="width: 4px; height: 4px; background: red; position: absolute; top: 0; left: 0"
+        ></div>
+        <div id="rect" style="border: 1px solid red; position: absolute; top: 0; left: 0"></div>
     </body>
 
     <template id="t-clock">
-        <div class="outer-circle" style="--hour: 8; --minutes: 15" onclick="handleClockClick(this)">
+        <div class="outer-circle" style="--hour: 8; --minutes: 15">
             <div class="minutes pointer"></div>
             <div class="hours pointer"></div>
             <div class="seconds pointer"></div>
