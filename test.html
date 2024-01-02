@@ -9,6 +9,11 @@
         <link rel="stylesheet" href="./css/clock.css" />
         <link rel="stylesheet" href="./css/styles.css" />
         <script src="./js/consts.js"></script>
+        <style>
+            .draggable-pointers-clock {
+                --radius: 15rem;
+            }
+        </style>
     </head>
 
     <body>
@@ -19,7 +24,7 @@
             import { rad2Deg, normalize, vAngleBetween } from "./js/math.mjs";
             import { instantiateClock } from "./js/core.mjs";
 
-            const c = instantiateClock(undefined, undefined, { className: "game-clock" });
+            const c = instantiateClock(undefined, undefined, { className: "draggable-pointers-clock" });
             $("#clock-test").append(c);
 
             const hoursPointer = $(".pointer.hours");
@@ -104,12 +109,14 @@
 
                 const currentHours = getHours(c);
                 const currentAngle = currentHours * DEGREES_IN_HOUR;
-                console.log(angle, currentAngle);
 
-                c.style.setProperty(
-                    "--hour",
-                    angle > currentAngle ? Math.floor(angle / DEGREES_IN_HOUR) : Math.ceil(angle / DEGREES_IN_HOUR)
-                );
+                if (currentAngle === 0 && angle > 11 * DEGREES_IN_HOUR) {
+                    c.style.setProperty("--hour", 12);
+                } else {
+                    const h =
+                        angle > currentAngle ? Math.floor(angle / DEGREES_IN_HOUR) : Math.ceil(angle / DEGREES_IN_HOUR);
+                    c.style.setProperty("--hour", h);
+                }
             });
         </script>
         <div
