@@ -15,3 +15,9 @@ export const showEl = (el) => el.classList.add("active");
 export const hideEl = (el) => el.classList.remove("active");
 
 export const getCssProperty = (name) => (instance) => instance.style.getPropertyValue(`--${name}`);
+export const setCssProperty = (name) => (instance, value) => instance.style.setProperty(`--${name}`, value);
+
+export const getElementCenter = (el) => {
+    const { x, y, width, height } = el.getBoundingClientRect();
+    return { x: x + width / 2, y: y + height / 2 };
+};

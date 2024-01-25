@@ -20,8 +20,8 @@
         <div id="clock-test" style="display: flex; align-items: center; justify-content: center; padding: 2rem 0"></div>
 
         <script type="module">
-            import { $, getCssProperty } from "./js/utils.mjs";
-            import { rad2Deg, normalize, vAngleBetween } from "./js/math.mjs";
+            import { $, getCssProperty, setCssProperty, getElementCenter } from "./js/utils.mjs";
+            import { rad2Deg, Vec2 } from "./js/math.mjs";
             import { instantiateClock } from "./js/core.mjs";
 
             const c = instantiateClock(undefined, undefined, { className: "draggable-pointers-clock" });
@@ -40,82 +40,28 @@
             });
 
             const getHours = getCssProperty("hour");
-
-            const center = (() => {
-                const { x, y, width, height } = c.getBoundingClientRect();
-                return {
-                    x: x + width / 2,
-                    y: y + height / 2,
-                };
-            })();
-
-            // const origin = $("#origin-point");
-            // origin.style.top = center.y + "px";
-            // origin.style.left = center.x + "px";
-            // origin.dataset.set = true;
-
-            // const rectel = $("#rect");
-
-            // Mam obecny kąt, Mam punkt środkowy, mam punkt w którym znajduje się myszka.
-            // To chyba wszystko czego potzebuję. Chcę wyliczyć kąt między prostą przechodzącą
-            // przez C (center) i przez M (myszka), a prostą idącą wzdłuż wektora UP i porównać ten kąt
-            // z kątem obecnym.
+            const setHours = setCssProperty("hour");
+            const center = getElementCenter(c);
 
             window.addEventListener("mousemove", (event) => {
                 if (!c.dataset.setting) return;
 
-                // const pointerPoints = (() => {
-                //     // const rect = hoursPointer.getBoundingClientRect();
-                //     // rectel.style.left = rect.x + "px";
-                //     // rectel.style.top = rect.y + "px";
-                //     // const width = rect.right - rect.x;
-                //     // rectel.style.width = width + "px";
-                //     // rectel.style.height = rect.bottom - rect.y + "px";
-
-                //     // Create a vector from center at the currentAngle angle and make the origin a
-                //     // point along that vector at hours pointer length from the center.
-
-                //     return {
-                //         origin: {
-                //             x: rect.right - width / 2,
-                //             y: rect.bottom,
-                //         },
-                //         end: {
-                //             x: rect.x + width / 2,
-                //             y: rect.y,
-                //         },
-                //     };
-                // })();
-
-                // const originPoint = pointerPoints.origin;
-                // if (!origin.dataset.set) {
-                //     origin.style.top = originPoint.y + "px";
-                //     origin.style.left = originPoint.x + "px";
-                //     origin.dataset.set = true;
-                // }
-
-                const M = event;
                 const C = center;
-                const U = { x: center.x, y: center.y - 10 };
-                const vCM = { x: M.x - C.x, y: M.y - C.y };
-                const vCU = { x: U.x - C.x, y: U.y - C.y };
-                const scalar = vCM.x * vCU.x + vCM.y * vCU.y;
-                const lenCM = Math.sqrt(vCM.x ** 2 + vCM.y ** 2);
-                const lenCU = Math.sqrt(vCU.x ** 2 + vCU.y ** 2);
-                let angle = (Math.acos(scalar / (lenCM * lenCU)) * 180) / Math.PI;
-                // poprawianie kąta tak, żeby zawsze był od 0 do 360, bo normalnie w js jest do max 180 i nie
-                // ma kąta ujemnego, więc nie miałem rozróżnienia po której stronie okręgu znajduje się kursor.
-                if (M.x < C.x) angle = Math.abs(angle - 360);
+                const M = event;
+                const UP = new Vec2(center.x, center.y - 10);
+                const vCM = Vec2.fromPoints(C, M);
+                const vCU = Vec2.fromPoints(C, UP);
+                const angle = Vec2.angleBetween(vCM, vCU);
 
                 const currentHours = getHours(c);
                 const currentAngle = currentHours * DEGREES_IN_HOUR;
 
                 if (currentAngle === 0 && angle > 11 * DEGREES_IN_HOUR) {
-                    c.style.setProperty("--hour", 12);
+                    setHours(c, 12);
                 } else {
                     const h =
                         angle > currentAngle ? Math.floor(angle / DEGREES_IN_HOUR) : Math.ceil(angle / DEGREES_IN_HOUR);
-                    c.style.setProperty("--hour", h);
+                    setHours(c, h);
                 }
             });
         </script>
