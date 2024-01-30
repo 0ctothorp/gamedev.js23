@@ -9,6 +9,7 @@
         <link rel="stylesheet" href="./css/clock.css" />
         <link rel="stylesheet" href="./css/styles.css" />
         <script src="./js/consts.js"></script>
+        <script src="./js/customElements/clock.js"></script>
         <style>
             .draggable-pointers-clock {
                 --radius: 15rem;
@@ -65,11 +66,7 @@
                 }
             });
         </script>
-        <div
-            id="origin-point"
-            style="width: 4px; height: 4px; background: red; position: absolute; top: 0; left: 0"
-        ></div>
-        <div id="rect" style="border: 1px solid red; position: absolute; top: 0; left: 0"></div>
+        <timeflies-clock></timeflies-clock>
     </body>
 
     <template id="t-clock">
@@ -77,6 +74,7 @@
             <div class="minutes pointer"></div>
             <div class="hours pointer"></div>
             <div class="seconds pointer"></div>
+            <div class="ball"></div>
         </div>
     </template>
 </html>
