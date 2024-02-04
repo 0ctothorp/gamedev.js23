@@ -18,58 +18,15 @@
 
     <body>
         <div id="clock-test" style="display: flex; align-items: center; justify-content: center; padding: 2rem 0"></div>
-
+        <div id="rect" style="background: red; position: absolute; width: 10px; height: 10px"></div>
         <script type="module">
-            import { $, getCssProperty, setCssProperty, getElementCenter } from "./js/utils.mjs";
-            import { rad2Deg, Vec2 } from "./js/math.mjs";
-            import { instantiateClock } from "./js/core.mjs";
+            import { $ } from "./js/utils.mjs";
+            import { instantiateClock, makeClockHaveAdjustablePointers } from "./js/core.mjs";
 
             const c = instantiateClock(undefined, undefined, { className: "draggable-pointers-clock" });
             $("#clock-test").append(c);
-
-            const hoursPointer = $(".pointer.hours");
-
-            hoursPointer.addEventListener("mousedown", () => {
-                c.dataset.setting = "hours";
-            });
-
-            document.addEventListener("mouseup", () => {
-                if (c.dataset.setting) {
-                    delete c.dataset.setting;
-                }
-            });
-
-            const getHours = getCssProperty("hour");
-            const setHours = setCssProperty("hour");
-            const center = getElementCenter(c);
-
-            window.addEventListener("mousemove", (event) => {
-                if (!c.dataset.setting) return;
-
-                const C = center;
-                const M = event;
-                const UP = new Vec2(center.x, center.y - 10);
-                const vCM = Vec2.fromPoints(C, M);
-                const vCU = Vec2.fromPoints(C, UP);
-                const angle = Vec2.angleBetween(vCM, vCU);
-
-                const currentHours = getHours(c);
-                const currentAngle = currentHours * DEGREES_IN_HOUR;
-
-                if (currentAngle === 0 && angle > 11 * DEGREES_IN_HOUR) {
-                    setHours(c, 12);
-                } else {
-                    const h =
-                        angle > currentAngle ? Math.floor(angle / DEGREES_IN_HOUR) : Math.ceil(angle / DEGREES_IN_HOUR);
-                    setHours(c, h);
-                }
-            });
+            makeClockHaveAdjustablePointers(c);
         </script>
-        <div
-            id="origin-point"
-            style="width: 4px; height: 4px; background: red; position: absolute; top: 0; left: 0"
-        ></div>
-        <div id="rect" style="border: 1px solid red; position: absolute; top: 0; left: 0"></div>
     </body>
 
     <template id="t-clock">

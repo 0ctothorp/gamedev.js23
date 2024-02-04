@@ -8,7 +8,10 @@ export const playAudio = (audio) => {
     audio.play();
 };
 
-export const $ = document.querySelector.bind(document);
+export const $ = (selector, parent) => {
+    if (parent) return parent.querySelector(selector);
+    return document.querySelector(selector);
+};
 export const $$ = document.querySelectorAll.bind(document);
 
 export const showEl = (el) => el.classList.add("active");
