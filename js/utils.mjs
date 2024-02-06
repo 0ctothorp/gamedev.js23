@@ -24,3 +24,11 @@ export const getElementCenter = (el) => {
     const { x, y, width, height } = el.getBoundingClientRect();
     return { x: x + width / 2, y: y + height / 2 };
 };
+
+export function debounce(fn, time) {
+    let timeoutId;
+    return (...args) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), time);
+    };
+}

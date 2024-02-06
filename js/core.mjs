@@ -1,4 +1,4 @@
-import { instantiateTemplate, $, getCssProperty, setCssProperty, getElementCenter } from "./utils.mjs";
+import { instantiateTemplate, $, getCssProperty, setCssProperty, getElementCenter, debounce } from "./utils.mjs";
 import { Vec2 } from "./math.mjs";
 
 export function instantiateClock(
@@ -25,10 +25,20 @@ export function instantiateClock(
  */
 export function makeClockHaveAdjustablePointers(clock) {
     const hoursPointer = $(".pointer.hours", clock);
+    const minutesPointer = $(".pointer.minutes", clock);
 
     hoursPointer.addEventListener("mousedown", () => {
         clock.dataset.setting = "hours";
     });
+    minutesPointer.addEventListener("mousedown", () => {
+        clock.dataset.setting = "minutes";
+    });
+
+    const prevDefault = (e) => {
+        e.preventDefault();
+    };
+    // Prevent unwanted behavior triggered by dragstart event.
+    hoursPointer.ondragstart = minutesPointer.ondragstart = prevDefault;
 
     document.addEventListener("mouseup", () => {
         delete clock.dataset.setting;
@@ -36,30 +46,44 @@ export function makeClockHaveAdjustablePointers(clock) {
 
     const getHours = getCssProperty("hour");
     const setHours = setCssProperty("hour");
-
-    // TODO: should recalculate after window resize
-    const center = getElementCenter(clock);
-    $("#rect").style.top = center.y + "px";
-    $("#rect").style.left = center.x + "px";
+    const getMinutes = getCssProperty("minutes");
+    const setMinutes = setCssProperty("minutes");
 
     window.addEventListener("mousemove", (event) => {
         if (!clock.dataset.setting) return;
 
-        const C = center;
+        const C = getElementCenter(clock);
         const M = event;
-        const UP = new Vec2(center.x, center.y - 10);
+        const UP = new Vec2(C.x, C.y - 10);
         const vCM = Vec2.fromPoints(C, M);
         const vCU = Vec2.fromPoints(C, UP);
         const angle = Vec2.angleBetween(vCM, vCU);
 
-        const currentHours = getHours(clock);
-        const currentAngle = currentHours * DEGREES_IN_HOUR;
+        if (clock.dataset.setting === "hours") {
+            const currentHours = getHours(clock);
+            const currentAngle = currentHours * DEGREES_IN_HOUR;
 
-        if (currentAngle === 0 && angle > 11 * DEGREES_IN_HOUR) {
-            setHours(clock, 12);
+            if (currentAngle === 0 && angle > 11 * DEGREES_IN_HOUR) {
+                setHours(clock, 12);
+            } else {
+                const h =
+                    angle > currentAngle ? Math.floor(angle / DEGREES_IN_HOUR) : Math.ceil(angle / DEGREES_IN_HOUR);
+                setHours(clock, h);
+            }
         } else {
-            const h = angle > currentAngle ? Math.floor(angle / DEGREES_IN_HOUR) : Math.ceil(angle / DEGREES_IN_HOUR);
-            setHours(clock, h);
+            // I will most likely only want to set minutesMoveBy to 5, or 1. And in case of 5, the calculations are exactly the
+            // the same as in case of setting hours, but well... I made it flexible, so you can set any step with which the
+            // minutes pointer will move by.
+            const moveByMinutes = Number(clock.dataset.minutesMoveBy) || "1";
+            const moveByDegrees = moveByMinutes * DEGREES_IN_MINUTES;
+            const currentAngle = getMinutes(clock) * DEGREES_IN_MINUTES;
+
+            if (currentAngle === 0 && angle > (60 - moveByMinutes) * DEGREES_IN_MINUTES) {
+                setMinutes(clock, 0);
+            } else {
+                const m = angle > currentAngle ? Math.floor(angle / moveByDegrees) : Math.ceil(angle / moveByDegrees);
+                setMinutes(clock, m * moveByMinutes);
+            }
         }
     });
 }

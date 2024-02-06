@@ -27,3 +27,4 @@ const LS_KEYS = {
 };
 
 const DEGREES_IN_HOUR = 30;
+const DEGREES_IN_MINUTES = 6;

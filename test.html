@@ -18,7 +18,7 @@
 
     <body>
         <div id="clock-test" style="display: flex; align-items: center; justify-content: center; padding: 2rem 0"></div>
-        <div id="rect" style="background: red; position: absolute; width: 10px; height: 10px"></div>
+        <!-- <div id="rect" style="background: red; position: absolute; width: 10px; height: 10px"></div> -->
         <script type="module">
             import { $ } from "./js/utils.mjs";
             import { instantiateClock, makeClockHaveAdjustablePointers } from "./js/core.mjs";
@@ -30,7 +30,7 @@
     </body>
 
     <template id="t-clock">
-        <div class="outer-circle" style="--hour: 8; --minutes: 15">
+        <div class="outer-circle" style="--hour: 8; --minutes: 15" data-minutes-move-by="5">
             <div class="minutes pointer"></div>
             <div class="hours pointer"></div>
             <div class="seconds pointer"></div>
